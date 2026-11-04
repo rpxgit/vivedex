@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.achievements import AchievementService
+from src.auth import validate_orcid_url
 from src.database import Database, utc_now_iso
 from src.models import CollectionItem, ObservationRecord, TaxonRecord, UserProfileRecord
 from src.schemas import GBIFMatchResult
@@ -657,6 +658,7 @@ class CollectionService:
         external_orcid_url: str = "",
     ) -> None:
         """Update researcher profile fields. Note: role cannot be altered here."""
+        clean_orcid = validate_orcid_url(external_orcid_url)
         now = utc_now_iso()
         with self.db.connect() as conn:
             cursor = conn.cursor()
@@ -669,7 +671,7 @@ class CollectionService:
                 (
                     display_name.strip(),
                     bio.strip(),
-                    external_orcid_url.strip(),
+                    clean_orcid,
                     now,
                     user_id,
                 ),

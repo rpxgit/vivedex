@@ -57,9 +57,14 @@ class AchievementService:
         with self.db.connect() as conn:
             cursor = conn.cursor()
 
-            # 1. Distinct taxa collected (first encounter reward)
+            # 1. First authentic encounters verified through recorded observations (SEC-05)
+            # Mere collection bookmarking / scraping without an observation awards 0 XP
             cursor.execute(
-                "SELECT COUNT(DISTINCT taxon_id) FROM collections WHERE user_id = ?;",
+                """
+                SELECT COUNT(DISTINCT matched_taxon_id)
+                FROM observations
+                WHERE owner_id = ? AND matched_taxon_id IS NOT NULL;
+                """,
                 (user_id,),
             )
             distinct_taxa = cursor.fetchone()[0] or 0

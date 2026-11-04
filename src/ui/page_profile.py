@@ -12,7 +12,7 @@ from src.achievements import AchievementService
 from src.auth import AuthenticatedUser
 from src.collection_service import CollectionService
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import get_naturalist_rank, render_hero_banner
+from src.ui.theme import escape_text, get_naturalist_rank, render_hero_banner, safe_url
 
 
 def render_profile_page(

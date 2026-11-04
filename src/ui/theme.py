@@ -6,6 +6,8 @@ Restor.eco ecological context, and Pokédex organism discovery.
 
 from __future__ import annotations
 
+import html
+from urllib.parse import urlparse
 import streamlit as st
 
 # Color Palette Tokens
@@ -252,13 +254,33 @@ def inject_theme_styles() -> None:
     )
 
 
+def escape_text(val: object | None) -> str:
+    """Safely escape arbitrary values for HTML interpolation (SEC-01)."""
+    if val is None:
+        return ""
+    return html.escape(str(val), quote=True)
+
+
+def safe_url(url: str | None) -> str:
+    """Validate and escape URL to prevent javascript: or data: XSS injections (SEC-01, SEC-08)."""
+    if not url:
+        return ""
+    stripped = url.strip()
+    parsed = urlparse(stripped)
+    if parsed.scheme.lower() in ("http", "https"):
+        return html.escape(stripped, quote=True)
+    return ""
+
+
 def render_hero_banner(title: str, subtitle: str) -> None:
     """Render a museum-grade editorial hero banner."""
+    escaped_title = escape_text(title)
+    escaped_subtitle = escape_text(subtitle)
     st.markdown(
         f"""
         <div class="hero-banner">
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
+            <h1>{escaped_title}</h1>
+            <p>{escaped_subtitle}</p>
         </div>
         """,
         unsafe_allow_html=True,

@@ -6,6 +6,7 @@ Never stores plaintext passwords in source code.
 
 from __future__ import annotations
 
+import os
 import json
 import secrets
 from typing import Any
@@ -17,12 +18,26 @@ from src.database import Database, utc_now_iso
 DEMO_PROVENANCE_TAG = "DEMO DATA"
 
 
+def is_demo_mode() -> bool:
+    """Return True if demonstration mode is explicitly enabled.
+
+    Enabled by default in local prototype unless VIVEDEX_DEMO_MODE is set to '0', 'false', or 'production'.
+    """
+    val = os.getenv("VIVEDEX_DEMO_MODE", "1").strip().lower()
+    return val not in ("0", "false", "no", "production", "prod")
+
+
 def load_demo_dataset(db: Database) -> dict[str, Any]:
     """Load curated demonstration records into the database.
 
     All sample records are stamped with DEMO DATA provenance.
     Generates dynamic secure passwords at runtime.
     """
+    if not is_demo_mode():
+        raise PermissionError(
+            "Demo dataset creation is prohibited in production mode. "
+            "Set VIVEDEX_DEMO_MODE=1 to enable development demonstration features."
+        )
     now = utc_now_iso()
     auth_service = AuthService(db)
     achievement_service = AchievementService(db)

@@ -10,6 +10,12 @@ SUPPORTED_MIME_TYPES = {
 }
 
 MAX_IMAGE_SIZE_BYTES = 8 * 1024 * 1024  # 8 MB
+MAX_IMAGE_WIDTH = 4096
+MAX_IMAGE_HEIGHT = 4096
+MAX_IMAGE_PIXELS = 16_777_216  # 4096 * 4096
+
+# Restrict Pillow global decompression bomb threshold (SEC-06)
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 
 
 class ImageValidationError(ValueError):
@@ -19,7 +25,7 @@ class ImageValidationError(ValueError):
 
 def validate_image(image_bytes: bytes, mime_type: str) -> str:
     """
-    Validate image file format, size, and integrity.
+    Validate image file format, size, dimensions, and integrity.
     
     Returns the normalized format string (JPEG, PNG, WEBP) if valid.
     Raises ImageValidationError if invalid.
@@ -41,8 +47,21 @@ def validate_image(image_bytes: bytes, mime_type: str) -> str:
     try:
         with Image.open(io.BytesIO(image_bytes)) as img:
             img.verify()
+            w, h = img.size
+            if w > MAX_IMAGE_WIDTH or h > MAX_IMAGE_HEIGHT:
+                raise ImageValidationError(
+                    f"Image dimensions ({w}x{h}) exceed maximum allowed {MAX_IMAGE_WIDTH}x{MAX_IMAGE_HEIGHT} pixels."
+                )
+            if (w * h) > MAX_IMAGE_PIXELS:
+                raise ImageValidationError(
+                    f"Total image pixels ({w * h}) exceed maximum allowed threshold ({MAX_IMAGE_PIXELS})."
+                )
+    except Image.DecompressionBombError as e:
+        raise ImageValidationError(f"Image rejected as potential decompression bomb: {str(e)}") from e
+    except ImageValidationError:
+        raise
     except Exception as e:
-        raise ImageValidationError(f"Invalid or corrupted image data: {str(e)}")
+        raise ImageValidationError(f"Invalid or corrupted image data: {str(e)}") from e
 
     return SUPPORTED_MIME_TYPES[norm_mime]
 
