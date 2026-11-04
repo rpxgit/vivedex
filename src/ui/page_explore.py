@@ -16,7 +16,7 @@ from src.knowledge_graph import KnowledgeGraphService
 from src.schemas import GBIFMatchResult
 from src.ui.common import inject_custom_styles, render_security_notice
 from src.ui.page_species_detail import CURATED_SPECIMEN_ASSETS, render_species_detail_page
-from src.ui.theme import render_hero_banner
+from src.ui.theme import escape_text, render_hero_banner
 
 # 10 Biological Browsing Categories
 TAXONOMIC_CATEGORIES = [
@@ -116,18 +116,25 @@ def render_explore_page(
 
                 # Render result card
                 is_exact = gbif_res.match_type == "EXACT"
+                esc_rank = escape_text(gbif_res.rank or "TAXON")
+                esc_name = escape_text(gbif_res.matched_scientific_name or gbif_res.query_name)
+                fam_val = gbif_res.hierarchy.get("family", "Unassigned") if gbif_res.hierarchy else "N/A"
+                esc_family = escape_text(fam_val)
+                esc_match_type = escape_text(gbif_res.match_type)
+                esc_score = escape_text(str(gbif_res.gbif_match_score) if gbif_res.gbif_match_score is not None else "N/A")
+
                 st.markdown(
                     f"""
                     <div class="specimen-card" style="border-left: 5px solid {'#183B32' if is_exact else '#A66B48'};">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                             <div>
-                                <span class="rank-pill">{gbif_res.rank or 'TAXON'}</span>
-                                <h3 style="margin: 4px 0 2px 0;">{gbif_res.matched_scientific_name or gbif_res.query_name}</h3>
-                                <div style="font-size: 0.85rem; color: #555;">Family: {gbif_res.hierarchy.get('family', 'Unassigned') if gbif_res.hierarchy else 'N/A'}</div>
+                                <span class="rank-pill">{esc_rank}</span>
+                                <h3 style="margin: 4px 0 2px 0;">{esc_name}</h3>
+                                <div style="font-size: 0.85rem; color: #555;">Family: {esc_family}</div>
                             </div>
                             <div style="text-align: right;">
                                 <span class="status-pill-{ 'accepted' if is_exact else 'pending' }">
-                                    {gbif_res.match_type} MATCH ({gbif_res.gbif_match_score or 'N/A'}/100)
+                                    {esc_match_type} MATCH ({esc_score}/100)
                                 </span>
                             </div>
                         </div>
@@ -199,23 +206,28 @@ def render_explore_page(
         img_thumb = asset.get("image_url")
 
         with cols[idx % 2]:
+            esc_t_rank = escape_text(t['rank'] or 'SPECIES')
+            esc_t_common = escape_text(t['common_name'] or t['scientific_name'])
+            esc_t_sci = escape_text(t['scientific_name'])
+            esc_t_family = escape_text(t['family'] or 'Biota')
+            esc_t_kingdom = escape_text(t['kingdom'] or 'Biota')
             st.markdown(
                 f"""
                 <div class="specimen-card" style="min-height: 200px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span class="rank-pill">{t['rank'] or 'SPECIES'}</span>
+                        <span class="rank-pill">{esc_t_rank}</span>
                         <span class="{'dex-collected-tag' if in_user_dex else 'status-pill-pending'}" style="font-size: 0.72rem;">
                             {'✅ IN MY DEX' if in_user_dex else '⚪ NOT RECORDED'}
                         </span>
                     </div>
                     <div style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; color: #183B32;">
-                        {t['common_name'] or t['scientific_name']}
+                        {esc_t_common}
                     </div>
                     <div class="latin-binomial" style="font-size: 0.95rem; margin-bottom: 6px;">
-                        *{t['scientific_name']}*
+                        *{esc_t_sci}*
                     </div>
                     <div style="font-size: 0.8rem; color: #777E73; margin-bottom: 12px;">
-                        Family: <strong>{t['family'] or 'Biota'}</strong> &bull; Kingdom: {t['kingdom'] or 'Biota'}
+                        Family: <strong>{esc_t_family}</strong> &bull; Kingdom: {esc_t_kingdom}
                     </div>
                 </div>
                 """,

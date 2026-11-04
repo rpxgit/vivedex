@@ -14,7 +14,7 @@ from src.auth import AuthService, AuthenticationError
 from src.database import DEFAULT_DB_PATH, Database
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> int:
     """Entry point for the Vivédex administrative CLI."""
     parser = argparse.ArgumentParser(
         description="Vivédex Administrative Command-Line Tool"
@@ -43,6 +43,8 @@ def main() -> None:
     )
     create_parser.add_argument(
         "--db-path",
+        "--db",
+        dest="db_path",
         default=None,
         help="Optional path to the SQLite database file",
     )
@@ -59,11 +61,13 @@ def main() -> None:
     )
     check_parser.add_argument(
         "--db-path",
+        "--db",
+        dest="db_path",
         default=None,
         help="Optional path to the SQLite database file",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     db_path = Path(args.db_path) if args.db_path else DEFAULT_DB_PATH
     db = Database(db_path)
     db.initialize_schema()
@@ -81,10 +85,10 @@ def main() -> None:
                 f"[SUCCESS] Administrator '{admin.username}' provisioned successfully "
                 f"(ID: {admin.id}, Vivédex ID: {admin.vivedex_id})."
             )
-            sys.exit(0)
+            return 0
         except (AuthenticationError, ValueError, PermissionError) as e:
             print(f"[ERROR] Failed to provision administrator: {e}", file=sys.stderr)
-            sys.exit(1)
+            return 1
 
     elif args.command == "check-admin":
         with db.connect() as conn:
@@ -102,8 +106,9 @@ def main() -> None:
                     )
             else:
                 print("[NOTICE] Zero administrator accounts exist in the database.")
-            sys.exit(0)
+            return 0
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

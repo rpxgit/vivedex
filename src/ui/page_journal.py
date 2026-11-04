@@ -12,7 +12,7 @@ import streamlit as st
 from src.auth import AuthenticatedUser
 from src.collection_service import CollectionService
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import render_hero_banner
+from src.ui.theme import escape_text, render_hero_banner
 
 
 def render_journal_page(collection_service: CollectionService) -> None:
@@ -81,12 +81,14 @@ def render_journal_page(collection_service: CollectionService) -> None:
             c_meta1, c_meta2 = st.columns([1, 1])
             with c_meta1:
                 st.write(f"**Record ID:** `{obs.observation_id}`")
-                st.write(f"**Candidate Taxon:** <span class='latin-binomial'>*{obs.candidate_scientific_name}*</span>", unsafe_allow_html=True)
+                esc_sci_name = escape_text(obs.candidate_scientific_name)
+                st.write(f"**Candidate Taxon:** <span class='latin-binomial'>*{esc_sci_name}*</span>", unsafe_allow_html=True)
                 st.write(f"**Taxon ID Key:** `{obs.matched_taxon_id or 'Unmatched'}`")
                 st.write(f"**Taxonomic Resolution:** `{obs.taxonomic_resolution or 'None'}`")
             with c_meta2:
                 st.write(f"**Observed Timestamp:** {obs.observation_timestamp}")
-                st.write(f"**Moderation State:** <span class='{status_class}'>{obs.moderation_status}</span>", unsafe_allow_html=True)
+                esc_mod_status = escape_text(obs.moderation_status)
+                st.write(f"**Moderation State:** <span class='{status_class}'>{esc_mod_status}</span>", unsafe_allow_html=True)
                 st.write(f"**Data Provenance:** `{obs.provenance}`")
                 if obs.coarse_location:
                     st.write(f"**Coarse Locality:** 📍 {obs.coarse_location}")
@@ -96,10 +98,11 @@ def render_journal_page(collection_service: CollectionService) -> None:
                 try:
                     m_data = json.loads(obs.model_result_json)
                     if m_data.get("observation_summary"):
+                        esc_obs_summary = escape_text(m_data["observation_summary"])
                         st.markdown(
                             f"""
                             <div style="background:#fdfaf4; border-left:3px solid #718568; padding:8px 12px; margin:10px 0; font-size:0.85rem; color:#444;">
-                                <strong>AI Vision Summary:</strong> {m_data['observation_summary']}
+                                <strong>AI Vision Summary:</strong> {esc_obs_summary}
                             </div>
                             """,
                             unsafe_allow_html=True,

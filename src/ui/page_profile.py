@@ -41,6 +41,18 @@ def render_profile_page(
         return
 
     rank_title = get_naturalist_rank(profile.level)
+    esc_display_name = escape_text(profile.display_name)
+    esc_username = escape_text(profile.username)
+    esc_vivedex_id = escape_text(profile.vivedex_id)
+    esc_join_date = escape_text(profile.join_date[:10])
+    esc_role = escape_text(profile.role.upper())
+    esc_bio = escape_text(profile.bio) if profile.bio else ""
+    esc_rank_title = escape_text(rank_title)
+    bio_html = (
+        f'<div style="margin-top: 14px; font-size: 0.95rem; color: #333; line-height: 1.5; background: #fdfaf4; padding: 12px; border-radius: 6px; border: 1px solid #efe8db;">{esc_bio}</div>'
+        if esc_bio
+        else ""
+    )
 
     # Main Contributor Card
     st.markdown(
@@ -49,22 +61,22 @@ def render_profile_page(
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                 <div>
                     <div style="font-size: 0.78rem; text-transform: uppercase; color: #777E73; font-weight: 700;">Verified Platform Contributor</div>
-                    <h2 style="margin: 0; font-size: 2rem; color: #183B32;">{profile.display_name}</h2>
+                    <h2 style="margin: 0; font-size: 2rem; color: #183B32;">{esc_display_name}</h2>
                     <div style="font-size: 0.95rem; color: #666; margin-top: 2px;">
-                        @{profile.username} &bull; Contributor ID: <code style="color: #183B32; font-weight: 700;">{profile.vivedex_id}</code>
+                        @{esc_username} &bull; Contributor ID: <code style="color: #183B32; font-weight: 700;">{esc_vivedex_id}</code>
                     </div>
                     <div style="font-size: 0.8rem; color: #777E73; margin-top: 6px;">
-                        Member since: <strong>{profile.join_date[:10]}</strong> &bull; System Role: <span class="rank-pill">{profile.role.upper()}</span>
+                        Member since: <strong>{esc_join_date}</strong> &bull; System Role: <span class="rank-pill">{esc_role}</span>
                     </div>
                 </div>
                 <div style="text-align: right;">
                     <div style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; color: #183B32;">
-                        Level {profile.level} {rank_title}
+                        Level {int(profile.level)} {esc_rank_title}
                     </div>
-                    <div style="font-size: 0.85rem; color: #A66B48; font-weight: 600;">{profile.total_xp} Total XP</div>
+                    <div style="font-size: 0.85rem; color: #A66B48; font-weight: 600;">{int(profile.total_xp)} Total XP</div>
                 </div>
             </div>
-            {f'<div style="margin-top: 14px; font-size: 0.95rem; color: #333; line-height: 1.5; background: #fdfaf4; padding: 12px; border-radius: 6px; border: 1px solid #efe8db;">{profile.bio}</div>' if profile.bio else ''}
+            {bio_html}
         </div>
         """,
         unsafe_allow_html=True,
@@ -136,22 +148,25 @@ def render_profile_page(
             save_profile = st.form_submit_button("💾 Save Profile Changes", type="primary")
 
             if save_profile:
-                collection_service.update_user_bio(
-                    user_id=current_user.id,
-                    display_name=disp_name,
-                    bio=bio_input,
-                    external_orcid_url=orcid_input,
-                )
-                st.session_state["current_user"] = AuthenticatedUser(
-                    id=current_user.id,
-                    username=current_user.username,
-                    role=current_user.role,
-                    display_name=disp_name.strip() or current_user.username,
-                    vivedex_id=current_user.vivedex_id,
-                    is_active=current_user.is_active,
-                )
-                st.success("Profile credentials updated successfully!")
-                st.rerun()
+                try:
+                    collection_service.update_user_bio(
+                        user_id=current_user.id,
+                        display_name=disp_name,
+                        bio=bio_input,
+                        external_orcid_url=orcid_input,
+                    )
+                    st.session_state["current_user"] = AuthenticatedUser(
+                        id=current_user.id,
+                        username=current_user.username,
+                        role=current_user.role,
+                        display_name=disp_name.strip() or current_user.username,
+                        vivedex_id=current_user.vivedex_id,
+                        is_active=current_user.is_active,
+                    )
+                    st.success("Profile credentials updated successfully!")
+                    st.rerun()
+                except ValueError as exc:
+                    st.error(str(exc))
 
     with col_orcid:
         st.subheader("🔗 External Attribution")
@@ -169,18 +184,21 @@ def render_profile_page(
         )
 
         if profile.external_orcid_url:
-            st.write("")
-            st.markdown(
-                f"""
-                <div style="background: #ffffff; border: 1px solid #c8d8be; border-radius: 6px; padding: 10px 14px;">
-                    <div style="font-size: 0.75rem; color: #718568; font-weight: 700; text-transform: uppercase;">External Link (Self-Reported)</div>
-                    <a href="{profile.external_orcid_url}" target="_blank" style="font-weight: 600; color: #183B32; text-decoration: none;">
-                        🌐 {profile.external_orcid_url}
-                    </a>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            clean_href = safe_url(profile.external_orcid_url)
+            esc_display_url = escape_text(profile.external_orcid_url)
+            if clean_href:
+                st.write("")
+                st.markdown(
+                    f"""
+                    <div style="background: #ffffff; border: 1px solid #c8d8be; border-radius: 6px; padding: 10px 14px;">
+                        <div style="font-size: 0.75rem; color: #718568; font-weight: 700; text-transform: uppercase;">External Link (Self-Reported)</div>
+                        <a href="{clean_href}" target="_blank" rel="noopener noreferrer" style="font-weight: 600; color: #183B32; text-decoration: none;">
+                            🌐 {esc_display_url}
+                        </a>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
     # Earned Badges Showcase
     st.markdown("---")
@@ -190,13 +208,16 @@ def render_profile_page(
         cols = st.columns(3)
         for idx, b in enumerate(badges):
             with cols[idx % 3]:
+                esc_b_name = escape_text(b.name)
+                esc_b_desc = escape_text(b.description)
+                esc_b_icon = escape_text(b.icon)
                 st.markdown(
                     f"""
                     <div class="specimen-card" style="padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 1.8rem;">{b.icon}</span>
+                        <span style="font-size: 1.8rem;">{esc_b_icon}</span>
                         <div>
-                            <div style="font-size: 0.95rem; font-weight: 700; color: #183B32;">{b.name}</div>
-                            <div style="font-size: 0.78rem; color: #777E73;">{b.description}</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: #183B32;">{esc_b_name}</div>
+                            <div style="font-size: 0.78rem; color: #777E73;">{esc_b_desc}</div>
                         </div>
                     </div>
                     """,

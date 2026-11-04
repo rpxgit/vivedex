@@ -13,7 +13,7 @@ from src.auth import AuthenticatedUser
 from src.collection_service import CollectionService
 from src.database import Database
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import get_naturalist_rank, render_hero_banner
+from src.ui.theme import escape_text, get_naturalist_rank, render_hero_banner
 
 
 def render_home_page(
@@ -96,19 +96,22 @@ def render_home_page(
     rank_title = get_naturalist_rank(gamification.level)
 
     # Contributor Overview Card
+    esc_disp_name = escape_text(current_user.display_name)
+    esc_vivedex_id = escape_text(current_user.vivedex_id)
+    esc_rank_title = escape_text(rank_title)
     st.markdown(
         f"""
         <div class="specimen-card" style="border-left: 5px solid #183B32; margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
                 <div>
                     <div style="font-size: 0.78rem; text-transform: uppercase; color: #777E73; font-weight: 700; letter-spacing: 0.05em;">Naturalist Station</div>
-                    <h2 style="margin: 0; color: #183B32; font-size: 1.8rem;">{current_user.display_name}</h2>
+                    <h2 style="margin: 0; color: #183B32; font-size: 1.8rem;">{esc_disp_name}</h2>
                     <div style="font-size: 0.88rem; color: #A66B48; font-weight: 600; margin-top: 2px;">
-                        Level {gamification.level} {rank_title} &bull; Contributor ID: <code style="color:#183B32;">{current_user.vivedex_id}</code>
+                        Level {int(gamification.level)} {esc_rank_title} &bull; Contributor ID: <code style="color:#183B32;">{esc_vivedex_id}</code>
                     </div>
                 </div>
                 <div style="text-align: right;">
-                    <span class="dex-collected-tag" style="font-size: 0.82rem; padding: 4px 12px;">Rank: {rank_title}</span>
+                    <span class="dex-collected-tag" style="font-size: 0.82rem; padding: 4px 12px;">Rank: {esc_rank_title}</span>
                 </div>
             </div>
         </div>
@@ -176,27 +179,34 @@ def render_home_page(
         st.subheader("🌿 Recent Field Discoveries")
         if recent_obs:
             for obs in recent_obs:
-                prov_tag = f"[{obs.provenance}] " if obs.provenance == "DEMO DATA" else ""
+                prov_tag = f"[{escape_text(obs.provenance)}] " if obs.provenance == "DEMO DATA" else ""
                 status_class = (
                     "status-pill-accepted"
                     if obs.moderation_status == "ACCEPTED_FOR_CATALOG"
                     else "status-pill-pending"
                 )
+                esc_obs_date = escape_text(obs.observation_timestamp[:10])
+                esc_obs_id = escape_text(obs.observation_id)
+                esc_mod_status = escape_text(obs.moderation_status)
+                esc_sci_name = escape_text(obs.candidate_scientific_name)
+                esc_field_notes = escape_text(obs.field_notes or "No natural history field notes entered.")
+                esc_location = escape_text(obs.coarse_location)
+                loc_html = f'<div style="font-size: 0.78rem; color: #A66B48; margin-top: 4px;">📍 {esc_location}</div>' if obs.coarse_location else ""
 
                 st.markdown(
                     f"""
                     <div class="specimen-card" style="padding: 1rem; margin-bottom: 0.8rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <span style="font-size: 0.76rem; color: #777E73;">{obs.observation_timestamp[:10]} &bull; {obs.observation_id}</span>
-                            <span class="{status_class}">{obs.moderation_status}</span>
+                            <span style="font-size: 0.76rem; color: #777E73;">{esc_obs_date} &bull; {esc_obs_id}</span>
+                            <span class="{status_class}">{esc_mod_status}</span>
                         </div>
                         <div style="font-size: 1.15rem; font-weight: 700; color: #183B32;">
-                            {prov_tag}<span class="latin-binomial">*{obs.candidate_scientific_name}*</span>
+                            {prov_tag}<span class="latin-binomial">*{esc_sci_name}*</span>
                         </div>
                         <div style="font-size: 0.85rem; color: #555; margin-top: 4px;">
-                            {obs.field_notes or 'No natural history field notes entered.'}
+                            {esc_field_notes}
                         </div>
-                        {f'<div style="font-size: 0.78rem; color: #A66B48; margin-top: 4px;">📍 {obs.coarse_location}</div>' if obs.coarse_location else ''}
+                        {loc_html}
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -228,16 +238,19 @@ def render_home_page(
         st.subheader("🎯 Active Naturalist Quests")
         if active_quests:
             for q in active_quests[:3]:
+                esc_q_icon = escape_text(q.icon)
+                esc_q_name = escape_text(q.name)
+                esc_q_desc = escape_text(q.description)
                 st.markdown(
                     f"""
                     <div class="quest-box">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 1.4rem;">{q.icon}</span>
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #A66B48;">REWARD: +{q.xp_reward} XP</span>
+                            <span style="font-size: 1.4rem;">{esc_q_icon}</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #A66B48;">REWARD: +{int(q.xp_reward)} XP</span>
                         </div>
-                        <div style="font-size: 0.95rem; font-weight: 700; color: #183B32; margin: 4px 0;">{q.name}</div>
-                        <div style="font-size: 0.8rem; color: #555; margin-bottom: 6px;">{q.description}</div>
-                        <div style="font-size: 0.76rem; font-weight: 700; color: #183B32;">Progress: {q.current_value} / {q.target_value}</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #183B32; margin: 4px 0;">{esc_q_name}</div>
+                        <div style="font-size: 0.8rem; color: #555; margin-bottom: 6px;">{esc_q_desc}</div>
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #183B32;">Progress: {int(q.current_value)} / {int(q.target_value)}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -250,13 +263,16 @@ def render_home_page(
         st.subheader(f"🎖️ Earned Milestones ({len(badges)})")
         if badges:
             for b in badges:
+                esc_b_icon = escape_text(b.icon)
+                esc_b_name = escape_text(b.name)
+                esc_b_desc = escape_text(b.description)
                 st.markdown(
                     f"""
                     <div style="background: #ffffff; border: 1px solid #e3ddd0; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 1.3rem;">{b.icon}</span>
+                        <span style="font-size: 1.3rem;">{esc_b_icon}</span>
                         <div>
-                            <div style="font-size: 0.88rem; font-weight: 700; color: #183B32;">{b.name}</div>
-                            <div style="font-size: 0.75rem; color: #777E73;">{b.description}</div>
+                            <div style="font-size: 0.88rem; font-weight: 700; color: #183B32;">{esc_b_name}</div>
+                            <div style="font-size: 0.75rem; color: #777E73;">{esc_b_desc}</div>
                         </div>
                     </div>
                     """,

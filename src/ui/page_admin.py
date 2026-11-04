@@ -10,9 +10,9 @@ import streamlit as st
 from src.admin_service import AdminService
 from src.auth import AuthenticatedUser
 from src.database import Database
-from src.demo_data import load_demo_dataset
+from src.demo_data import is_demo_mode, load_demo_dataset
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import render_hero_banner
+from src.ui.theme import escape_text, render_hero_banner
 
 MODERATION_SAFEGUARD = (
     "MANDATORY SCIENTIFIC SAFEGUARD: 'ACCEPTED_FOR_CATALOG' signifies that the observation meets "
@@ -230,7 +230,10 @@ def render_admin_page(db: Database, admin_service: AdminService) -> None:
             and moderation workflows without manual image uploads.
             """
         )
-        if st.button("📦 Load Controlled Demonstration Dataset", type="primary", key="admin_load_demo_btn"):
-            res = load_demo_dataset(db)
-            st.success(f"Demonstration records loaded successfully with {res['provenance']} provenance tag!")
-            st.rerun()
+        if is_demo_mode():
+            if st.button("📦 Load Controlled Demonstration Dataset", type="primary", key="admin_load_demo_btn"):
+                res = load_demo_dataset(db)
+                st.success(f"Demonstration records loaded successfully with {res['provenance']} provenance tag!")
+                st.rerun()
+        else:
+            st.info("🔒 Demonstration dataset loading is disabled in production mode. Set `VIVEDEX_DEMO_MODE=1` to enable demo management.")

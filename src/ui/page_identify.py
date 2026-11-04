@@ -19,7 +19,7 @@ from src.image_processor import ImageValidationError
 from src.meta_adapter import MetaAPIConfigurationError, MetaAPIRequestError
 from src.schemas import VivedexResult
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import render_hero_banner
+from src.ui.theme import escape_text, render_hero_banner
 
 
 def render_identify_page(
@@ -129,10 +129,11 @@ def render_identify_page(
         st.markdown("---")
 
         # Distinct Verification State Warnings
+        esc_disclaimer = escape_text(active_result.disclaimer)
         st.markdown(
             f"""
             <div style="background: #fff8e6; border: 1px solid #ffe299; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-weight: 600; color: #8a6500;">
-                ⚠️ {active_result.disclaimer}
+                ⚠️ {esc_disclaimer}
             </div>
             """,
             unsafe_allow_html=True,
@@ -149,17 +150,20 @@ def render_identify_page(
         if primary_candidate and primary_candidate.scientific_name:
             col_prop1, col_prop2 = st.columns([3, 1])
             with col_prop1:
-                comm_txt = f" ({primary_candidate.common_name})" if primary_candidate.common_name else ""
+                comm_name = escape_text(primary_candidate.common_name or "")
+                sci_name = escape_text(primary_candidate.scientific_name)
+                label_prefix = f"{comm_name} — " if comm_name else ""
                 st.markdown(
                     f"""
                     <div style="font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #183B32;">
-                        {comm_txt.strip(' ()')} — <span class="latin-binomial">*{primary_candidate.scientific_name}*</span>
+                        {label_prefix}<span class="latin-binomial">*{sci_name}*</span>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
             with col_prop2:
-                st.markdown(f'<span class="rank-pill">{primary_candidate.suggested_rank or "SPECIES"}</span>', unsafe_allow_html=True)
+                esc_sugg_rank = escape_text(primary_candidate.suggested_rank or "SPECIES")
+                st.markdown(f'<span class="rank-pill">{esc_sugg_rank}</span>', unsafe_allow_html=True)
 
             if primary_candidate.uncertainty_note:
                 st.info(f"ℹ️ **Confidence & Diagnostic Uncertainty:** {primary_candidate.uncertainty_note}")
@@ -174,7 +178,8 @@ def render_identify_page(
             if primary_candidate.lookalikes:
                 st.markdown("#### 👥 Confusing Lookalikes / Related Taxa")
                 for item in primary_candidate.lookalikes:
-                    st.markdown(f"- <span class='latin-binomial'>*{item}*</span>", unsafe_allow_html=True)
+                    esc_item = escape_text(item)
+                    st.markdown(f"- <span class='latin-binomial'>*{esc_item}*</span>", unsafe_allow_html=True)
         else:
             st.error("No candidate organism could be proposed from this photograph.")
 

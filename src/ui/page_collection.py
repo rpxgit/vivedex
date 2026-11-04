@@ -14,7 +14,7 @@ from src.database import Database
 from src.knowledge_graph import KnowledgeGraphService
 from src.ui.common import inject_custom_styles, render_security_notice
 from src.ui.page_species_detail import CURATED_SPECIMEN_ASSETS
-from src.ui.theme import render_hero_banner
+from src.ui.theme import escape_text, render_hero_banner
 
 
 def render_collection_page(
@@ -106,26 +106,41 @@ def render_collection_page(
         img_thumb = asset.get("image_url")
 
         with cols[idx % 2]:
+            esc_item_rank = escape_text(item.rank or "SPECIES")
+            esc_encounters = int(item.encounter_count)
+            esc_item_common = escape_text(item.common_name or item.scientific_name)
+            esc_item_sci = escape_text(item.scientific_name)
+            esc_item_fam = escape_text(item.family or "Biota")
+            esc_item_king = escape_text(item.kingdom or "Biota")
+            esc_first = escape_text(item.first_encounter_at[:10] if item.first_encounter_at else "")
+            esc_last = escape_text(item.last_encounter_at[:10] if item.last_encounter_at else "")
+            esc_notes = escape_text(item.notes) if item.notes else ""
+            notes_html = (
+                f'<div style="font-size: 0.8rem; color: #555; background: #fdfaf4; padding: 6px; border-radius: 4px; margin-top: 8px; border: 1px solid #efe8db;">Notes: {esc_notes}</div>'
+                if esc_notes
+                else ""
+            )
+
             st.markdown(
                 f"""
                 <div class="specimen-card" style="border-left: 4px solid #C6A66B;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span class="rank-pill">{item.rank or 'SPECIES'}</span>
-                        <span class="dex-collected-tag">Encounters: {item.encounter_count}</span>
+                        <span class="rank-pill">{esc_item_rank}</span>
+                        <span class="dex-collected-tag">Encounters: {esc_encounters}</span>
                     </div>
                     <div style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; color: #183B32;">
-                        {item.common_name or item.scientific_name}
+                        {esc_item_common}
                     </div>
                     <div class="latin-binomial" style="font-size: 0.95rem; margin-bottom: 6px;">
-                        *{item.scientific_name}*
+                        *{esc_item_sci}*
                     </div>
                     <div style="font-size: 0.8rem; color: #777E73;">
-                        Family: <strong>{item.family or 'Biota'}</strong> &bull; Kingdom: {item.kingdom or 'Biota'}
+                        Family: <strong>{esc_item_fam}</strong> &bull; Kingdom: {esc_item_king}
                     </div>
                     <div style="font-size: 0.78rem; color: #A66B48; margin-top: 4px;">
-                        First Recorded: {item.first_encounter_at[:10]} &bull; Latest: {item.last_encounter_at[:10]}
+                        First Recorded: {esc_first} &bull; Latest: {esc_last}
                     </div>
-                    {f'<div style="font-size: 0.8rem; color: #555; background: #fdfaf4; padding: 6px; border-radius: 4px; margin-top: 8px; border: 1px solid #efe8db;">Notes: {item.notes}</div>' if item.notes else ''}
+                    {notes_html}
                 </div>
                 """,
                 unsafe_allow_html=True,

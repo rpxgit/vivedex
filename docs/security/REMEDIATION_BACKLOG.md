@@ -1,111 +1,86 @@
 # Vivédex Security Remediation Backlog
 
 ## 1. Executive Summary
-This backlog provides an actionable, prioritized engineering remediation plan for all vulnerabilities and risks identified in the Vivédex Cybersecurity Assessment (RUN 009).
-All tasks are categorized by priority and lifecycle phase.
+This backlog records the prioritized engineering remediation plan and implementation status for all vulnerabilities identified in the Vivédex Cybersecurity Assessment (RUN 009).
+All tasks were remediated, verified, and hardened during RUN 010.
 All descriptions adhere to the ASD-STE100 technical standard.
 
 ---
 
 ## 2. Prioritized Remediation Task Matrix
 
-| Task ID | Finding Ref | Priority | Title | Affected File(s) | Target Phase | Est. Effort |
+| Task ID | Finding Ref | Priority | Title | Affected File(s) | Status | Verification |
 |---|---|---|---|---|---|---|
-| **REM-01** | SEC-01 | **P1 (High)** | Neutralize Stored & Reflected XSS via Strict HTML Escaping | `src/ui/page_*.py`, `src/ui/theme.py` | Immediate (Phase 1) | 3 hours |
-| **REM-02** | SEC-02 | **P1 (High)** | Replace First-User Admin Bootstrap with Secure Provisioning | `src/auth.py`, `src/cli.py` | Immediate (Phase 1) | 3 hours |
-| **REM-03** | SEC-06 | **P2 (Med)** | Enforce Maximum Image Dimensions to Prevent Decompression Bombs | `src/image_processor.py` | Next Sprint (Phase 2) | 2 hours |
-| **REM-04** | SEC-03 | **P2 (Med)** | Implement Account Lockout and Brute-Force Throttling | `src/auth.py`, `src/database.py` | Next Sprint (Phase 2) | 4 hours |
-| **REM-05** | SEC-04 | **P2 (Med)** | Eliminate Login Timing Side-Channel with Constant-Time Check | `src/auth.py` | Next Sprint (Phase 2) | 1 hour |
-| **REM-06** | SEC-05 | **P2 (Med)** | Restrict Gamification XP Awards to Verified Observations | `src/collection_service.py`, `src/achievements.py` | Next Sprint (Phase 2) | 3 hours |
-| **REM-07** | SEC-08 | **P3 (Low)** | Validate External Researcher URL Scheme (`https://orcid.org/`) | `src/collection_service.py` | Polish (Phase 3) | 1 hour |
-| **REM-08** | SEC-07 | **P3 (Low)** | Add In-Memory Session Idle Timeout Invalidation | `app.py`, `src/ui/common.py` | Polish (Phase 3) | 2 hours |
-| **REM-09** | SEC-09 | **P3 (Low)** | Formulate Endangered Species Locality Fuzzing Policy | `docs/data_governance/` | Hosted Beta (Phase 4)| 4 hours |
+| **REM-01** | SEC-01 | **P1 (High)** | Neutralize Stored & Reflected XSS via Strict HTML Escaping | `src/ui/page_*.py`, `src/ui/theme.py` | **COMPLETED** | `tests/test_security.py::test_html_escaping_utility` |
+| **REM-02** | SEC-02 | **P1 (High)** | Replace First-User Admin Bootstrap with Secure Provisioning | `src/auth.py`, `src/cli.py`, `src/demo_data.py` | **COMPLETED** | `tests/test_security.py::test_public_registration_never_assigns_admin`, `test_cli_admin_provisioning_command` |
+| **REM-03** | SEC-06 | **P2 (Med)** | Enforce Maximum Image Dimensions to Prevent Decompression Bombs | `src/image_processor.py` | **COMPLETED** | `tests/test_security.py::test_image_processor_rejects_oversized_dimensions` |
+| **REM-04** | SEC-03 | **P2 (Med)** | Implement Account Lockout and Brute-Force Throttling | `src/auth.py` | **COMPLETED** | `tests/test_security.py::test_login_rate_limiting_lockout` |
+| **REM-05** | SEC-04 | **P2 (Med)** | Eliminate Login Timing Side-Channel with Constant-Time Check | `src/auth.py` | **COMPLETED** | `tests/test_security.py::test_dummy_password_verification_for_missing_user` |
+| **REM-06** | SEC-05 | **P2 (Med)** | Restrict Gamification XP Awards to Verified Observations | `src/collection_service.py`, `src/achievements.py` | **COMPLETED** | `tests/test_security.py::test_xp_separation_no_xp_for_manual_collection_save` |
+| **REM-07** | SEC-08 | **P3 (Low)** | Validate External Researcher URL Scheme (`https://orcid.org/`) | `src/auth.py`, `src/collection_service.py` | **COMPLETED** | `tests/test_security.py::test_orcid_validation_valid_formats` |
+| **REM-08** | SEC-07 | **P3 (Low)** | Add In-Memory Session Idle Timeout Invalidation | `src/ui/common.py` | **COMPLETED** | `tests/test_security.py::test_session_timeout_expiration` |
+| **REM-09** | SEC-09 | **P3 (Low)** | Formulate Endangered Species Locality Fuzzing Policy | `docs/security/` | **COMPLETED** | Documented in `docs/security/SECURITY_CONFIGURATION.md` |
 
 ---
 
-## 3. Detailed Remediation Action Plans
+## 3. Detailed Remediation Action Plans & Completion Records
 
 ### REM-01: Neutralize Stored & Reflected XSS via Strict HTML Escaping
-- **Objective:** Prevent arbitrary JavaScript execution when rendering user, model, or API strings into custom HTML cards.
-- **Implementation Steps:**
-  1. Import standard `html` module in `src/ui/common.py`, `src/ui/theme.py`, and all page controllers.
-  2. Create a helper function `def safe_text(val: Any) -> str: return html.escape(str(val or ""))`.
-  3. Wrap all dynamic variables (`profile.display_name`, `profile.bio`, `profile.external_orcid_url`, `obs.candidate_scientific_name`, `m_data['observation_summary']`, `search_query`) before inserting into f-strings.
-  4. In `src/ui/page_profile.py`, validate that `external_orcid_url` starts with `https://` before rendering inside `<a href="...">`.
-- **Target Verification:**
-  Submit string `<script>alert(1)</script>` into bio. Confirm it renders as visible text without executing.
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Added `escape_text()` and `safe_url()` in `src/ui/theme.py`. Applied escaping across all dynamic fields in `src/ui/page_profile.py`, `src/ui/page_journal.py`, `src/ui/page_home.py`, `src/ui/page_explore.py`, `src/ui/page_identify.py`, `src/ui/page_collection.py`, `src/ui/page_species_detail.py`, `src/ui/page_achievements.py`, `src/ui/page_admin.py`, and `src/ui/page_knowledge.py`.
+- **Verification:** Verified in `tests/test_security.py::test_html_escaping_utility` and `tests/test_security.py::test_safe_url_filtering`.
 
 ---
 
 ### REM-02: Replace First-User Admin Bootstrap with Secure Provisioning
-- **Objective:** Eliminate unauthorized administrative takeover on newly deployed instances.
-- **Implementation Steps:**
-  1. In `src/auth.py`: Modify `register_user()`. Remove automatic `admin` role assignment when `user_count == 0`. Assign `role='user'` unconditionally to all standard registrations.
-  2. Support an optional environment variable `INITIAL_ADMIN_TOKEN`. Allow registration with `role='admin'` only if the user provides the matching token.
-  3. Provide a command-line administration script `py -m src.cli create-admin --username <name> --password <pwd>` that directly seeds an administrator account in the local database.
-- **Target Verification:**
-  Assert that registering the first user via web form assigns `role='user'`.
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** In `src/auth.py`, removed automatic `admin` role assignment upon registration. Standard registration always assigns `role='user'`. Created `src/cli.py` (`python -m src.cli create-admin`) with subcommands `create-admin` and `check-admin`. Added `is_demo_mode()` check guarding demo data loading.
+- **Verification:** Verified in `tests/test_security.py::test_public_registration_never_assigns_admin`, `test_provision_admin_user_service`, and `test_cli_admin_provisioning_command`.
 
 ---
 
 ### REM-03: Enforce Maximum Image Dimensions to Prevent Decompression Bombs
-- **Objective:** Mitigate memory exhaustion and DoS attacks using compressed image bombs.
-- **Implementation Steps:**
-  1. Define constants in `src/image_processor.py`:
-     `MAX_IMAGE_WIDTH = 4096`, `MAX_IMAGE_HEIGHT = 4096`, `MAX_IMAGE_PIXELS = 16_777_216`.
-  2. In `validate_image()`, open image using Pillow and check:
-     ```python
-     with Image.open(io.BytesIO(image_bytes)) as img:
-         img.verify()
-         if img.width > MAX_IMAGE_WIDTH or img.height > MAX_IMAGE_HEIGHT:
-             raise ImageValidationError(f"Image dimensions ({img.width}x{img.height}) exceed maximum allowed {MAX_IMAGE_WIDTH}x{MAX_IMAGE_HEIGHT}.")
-         if (img.width * img.height) > MAX_IMAGE_PIXELS:
-             raise ImageValidationError("Image total pixel count exceeds memory threshold.")
-     ```
-- **Target Verification:**
-  Submit synthetic image of dimensions $5000 \times 5000$. Verify immediate rejection with `ImageValidationError`.
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Added constants in `src/image_processor.py`: `MAX_IMAGE_WIDTH = 4096`, `MAX_IMAGE_HEIGHT = 4096`, `MAX_IMAGE_PIXELS = 16_777_216`. Set `Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS`. Added explicit dimension checks in `validate_image()`.
+- **Verification:** Verified in `tests/test_security.py::test_image_processor_rejects_oversized_dimensions` and `test_image_processor_validates_standard_dimensions`.
 
 ---
 
 ### REM-04: Implement Account Lockout and Brute-Force Throttling
-- **Objective:** Defend user accounts against automated password cracking.
-- **Implementation Steps:**
-  1. Add table `login_attempts (id INTEGER PRIMARY KEY, username TEXT, ip_address TEXT, attempted_at TEXT, success INTEGER)`.
-  2. In `AuthService.authenticate_user()`, query failed attempts for `clean_username` within the last 15 minutes.
-  3. If failed attempts $\ge 5$, raise `AuthenticationError("Account temporarily locked due to excessive failed attempts. Please try again in 15 minutes.")`.
-  4. On successful login, clear failed attempt records for that username.
-- **Target Verification:**
-  Execute 5 failed login attempts in test; assert 6th attempt is locked.
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Integrated thread-safe progressive rate limiter in `AuthService`. Allows 5 attempts before enforcing a 60-second cooldown, scaling up to 900 seconds. Clears upon successful authentication.
+- **Verification:** Verified in `tests/test_security.py::test_login_rate_limiting_lockout`.
 
 ---
 
 ### REM-05: Eliminate Login Timing Side-Channel with Constant-Time Check
-- **Objective:** Prevent username enumeration through timing analysis.
-- **Implementation Steps:**
-  1. Generate a constant dummy salt and dummy password hash at module initialization in `src/auth.py`.
-  2. When `cursor.fetchone()` returns `None`, execute `verify_password("dummy_password", DUMMY_SALT, DUMMY_HASH)`.
-  3. Ensure both paths take uniform time ($\approx 80 \text{ ms}$) before raising `AuthenticationError("Invalid username or password.")`.
-- **Target Verification:**
-  Measure response duration for existing vs non-existent usernames. Confirm variance is $< 10\%$.
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Added module-level `DUMMY_SALT` and `DUMMY_HASH`. Non-existent usernames trigger full PBKDF2 hash comparison using `hmac.compare_digest`.
+- **Verification:** Verified in `tests/test_security.py::test_dummy_password_verification_for_missing_user`.
 
 ---
 
 ### REM-06: Restrict Gamification XP Awards to Verified Observations
-- **Objective:** Restore integrity to player levels and milestone progression.
-- **Implementation Steps:**
-  1. In `src/achievements.py`, calculate first-encounter XP only from distinct taxa present in observations marked as `LIVE_ANALYSIS` or `ACCEPTED_FOR_CATALOG`.
-  2. In `src/collection_service.py`, allow users to save taxa as "Target Wishlist" without incrementing field encounter XP.
-  3. Award field notes XP (+20 XP) only when the observation passes community moderation.
-- **Target Verification:**
-  Save 10 taxa via `Explore Dex` without uploading photos. Verify user XP remains 0.
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Updated `calculate_xp_breakdown()` in `src/achievements.py`: First encounter XP (+50 XP) is calculated exclusively from unique taxa with recorded observations (`observations.matched_taxon_id IS NOT NULL`). Manual collection entries award 0 XP.
+- **Verification:** Verified in `tests/test_security.py::test_xp_separation_no_xp_for_manual_collection_save`.
 
 ---
 
-### REM-07: Validate External Researcher URL Scheme
-- **Objective:** Prevent phishing links, open redirects, or javascript URLs in ORCID profile cards.
-- **Implementation Steps:**
-  1. In `src/collection_service.py:update_user_bio()`, validate `external_orcid_url` against regex:
-     `^https://orcid\.org/[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$`
-  2. If the string is non-empty and does not match, raise `ValueError("Invalid ORCID URL. Must match format: https://orcid.org/XXXX-XXXX-XXXX-XXXX")`.
-- **Target Verification:**
-  Submit `javascript:alert(1)`. Verify that `ValueError` is raised and profile is not updated.
+### REM-07: Validate External Researcher URL Scheme (`https://orcid.org/`)
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Created `validate_orcid_url()` in `src/auth.py`. Validates HTTPS, domain whitelist (`orcid.org`, `www.orcid.org`), no credentials, query parameters, or fragments, and 16-digit regex format `/\d{4}-\d{4}-\d{4}-\d{3}[\dX]`. Enforced in `CollectionService.update_user_bio`.
+- **Verification:** Verified in `tests/test_security.py::test_orcid_validation_valid_formats` and `test_orcid_validation_invalid_formats`.
+
+---
+
+### REM-08: Add In-Memory Session Idle Timeout Invalidation
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Added `check_session_timeout()` in `src/ui/common.py` with a 30-minute idle threshold. Automatically clears `current_user` and `active_user_id` upon expiration.
+- **Verification:** Verified in `tests/test_security.py::test_session_timeout_expiration` and `test_session_timeout_active_session_retained`.
+
+---
+
+### REM-09: Formulate Endangered Species Locality Fuzzing Policy
+- **Status:** **COMPLETED** (RUN 010)
+- **Implementation:** Established policy requiring coordinate generalization to a minimum 10 km grid for IUCN Red List threatened/endangered taxa prior to public mapping. Documented in `docs/security/SECURITY_CONFIGURATION.md` and `docs/security/PRODUCTION_SECURITY_REQUIREMENTS.md`.

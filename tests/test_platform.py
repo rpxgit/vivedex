@@ -161,21 +161,30 @@ class TestPlatformEvolution(unittest.TestCase):
         session["current_user"] = None
         self.assertIsNone(session["current_user"])
 
-    # 9. First-user administrator bootstrap
+    # 9. Public registration never assigns admin role; admin is provisioned via CLI/service (SEC-02)
     def test_first_user_admin_bootstrap(self) -> None:
-        first_user = self.auth_service.register_user("first_admin", "password_123")
+        first_user = self.auth_service.register_user("first_member", "password_123")
         second_user = self.auth_service.register_user(
             "second_member", "password_123"
         )
-        self.assertEqual(first_user.role, "admin")
-        self.assertTrue(first_user.is_admin)
+        self.assertEqual(first_user.role, "user")
+        self.assertFalse(first_user.is_admin)
         self.assertEqual(second_user.role, "user")
         self.assertFalse(second_user.is_admin)
 
+        # Explicit admin provisioning via operator workflow
+        admin_user = self.auth_service.provision_admin_user(
+            "admin_operator", "password_123"
+        )
+        self.assertEqual(admin_user.role, "admin")
+        self.assertTrue(admin_user.is_admin)
+
     # 10. User role restrictions
     def test_user_role_restrictions(self) -> None:
-        self.auth_service.register_user("admin_lead", "password_123")
+        admin_user = self.auth_service.provision_admin_user("admin_lead", "password_123")
         standard_user = self.auth_service.register_user("regular_user", "password_123")
+        self.assertEqual(admin_user.role, "admin")
+        self.auth_service.require_admin(admin_user)
         with self.assertRaises(AuthorizationError):
             self.auth_service.require_admin(standard_user)
 
@@ -327,7 +336,7 @@ class TestPlatformEvolution(unittest.TestCase):
 
     # 18. Admin-only dashboard access
     def test_admin_only_dashboard_access(self) -> None:
-        admin_user = self.auth_service.register_user("admin_boss", "password_123")
+        admin_user = self.auth_service.provision_admin_user("admin_boss", "password_123")
         reg_user = self.auth_service.register_user("staff_member", "password_123")
 
         # Admin access succeeds
@@ -340,7 +349,7 @@ class TestPlatformEvolution(unittest.TestCase):
 
     # 19. Admin moderation
     def test_admin_moderation(self) -> None:
-        admin = self.auth_service.register_user("admin_mod", "password_123")
+        admin = self.auth_service.provision_admin_user("admin_mod", "password_123")
         user = self.auth_service.register_user("submitting_user", "password_123")
 
         obs = self.collection_service.record_observation(
@@ -366,7 +375,7 @@ class TestPlatformEvolution(unittest.TestCase):
 
     # 20. Audit log creation
     def test_audit_log_creation(self) -> None:
-        admin = self.auth_service.register_user("audit_admin", "password_123")
+        admin = self.auth_service.provision_admin_user("audit_admin", "password_123")
         user = self.auth_service.register_user("audit_user", "password_123")
         obs = self.collection_service.record_observation(
             user_id=user.id,

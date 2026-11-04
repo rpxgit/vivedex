@@ -12,7 +12,7 @@ import streamlit as st
 from src.achievements import AchievementService
 from src.auth import AuthenticatedUser
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import get_naturalist_rank, render_hero_banner
+from src.ui.theme import escape_text, get_naturalist_rank, render_hero_banner
 
 # Badge family mappings
 BADGE_FAMILIES = {
@@ -47,6 +47,8 @@ def render_achievements_page(achievement_service: AchievementService) -> None:
     next_rank = get_naturalist_rank(stats.level + 1)
 
     # Rank Showcase Card
+    esc_rank_title = escape_text(rank_title)
+    esc_next_rank = escape_text(next_rank)
     st.markdown(
         f"""
         <div class="specimen-card" style="border-left: 5px solid #C6A66B; margin-bottom: 1.5rem;">
@@ -54,14 +56,14 @@ def render_achievements_page(achievement_service: AchievementService) -> None:
                 <div>
                     <div style="font-size: 0.78rem; text-transform: uppercase; color: #777E73; font-weight: 700; letter-spacing: 0.05em;">Current Rank</div>
                     <div style="font-family: 'Cinzel', serif; font-size: 1.8rem; font-weight: 700; color: #183B32;">
-                        Level {stats.level} &bull; {rank_title}
+                        Level {int(stats.level)} &bull; {esc_rank_title}
                     </div>
                     <div style="font-size: 0.9rem; color: #555; margin-top: 4px;">
-                        Cumulative Experience: <strong style="color: #A66B48;">{stats.total_xp} XP</strong> &bull; Milestones Earned: <strong>{stats.badges_earned_count} / {stats.total_badges_count}</strong>
+                        Cumulative Experience: <strong style="color: #A66B48;">{int(stats.total_xp)} XP</strong> &bull; Milestones Earned: <strong>{int(stats.badges_earned_count)} / {int(stats.total_badges_count)}</strong>
                     </div>
                 </div>
                 <div style="text-align: right;">
-                    <span class="dex-collected-tag" style="font-size: 0.9rem; padding: 6px 16px;">Next Rank: {next_rank}</span>
+                    <span class="dex-collected-tag" style="font-size: 0.9rem; padding: 6px 16px;">Next Rank: {esc_next_rank}</span>
                 </div>
             </div>
         </div>
@@ -104,27 +106,31 @@ def render_achievements_page(achievement_service: AchievementService) -> None:
         )
 
         with cols[idx % 2]:
+            esc_icon = escape_text(p.icon)
+            esc_fam_name = escape_text(fam_name)
+            esc_name = escape_text(p.name)
+            esc_desc = escape_text(p.description)
             st.markdown(
                 f"""
                 <div class="specimen-card" style="border: 2px solid {'#183B32' if p.is_earned else '#ded6c5'}; background: {'#f7fcf8' if p.is_earned else '#ffffff'};">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                        <span style="font-size: 2rem;">{p.icon}</span>
+                        <span style="font-size: 2rem;">{esc_icon}</span>
                         <div>
                             {earned_tag}
-                            <span class="dex-collected-tag" style="margin-left: 4px;">+{p.xp_reward} XP</span>
+                            <span class="dex-collected-tag" style="margin-left: 4px;">+{int(p.xp_reward)} XP</span>
                         </div>
                     </div>
                     <div style="font-size: 0.75rem; text-transform: uppercase; color: #718568; font-weight: 700; letter-spacing: 0.04em;">
-                        {fam_name}
+                        {esc_fam_name}
                     </div>
                     <div style="font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: #183B32; margin: 2px 0 6px 0;">
-                        {p.name}
+                        {esc_name}
                     </div>
                     <div style="font-size: 0.85rem; color: #555; margin-bottom: 8px;">
-                        {p.description}
+                        {esc_desc}
                     </div>
                     <div style="font-size: 0.78rem; font-weight: 700; color: #183B32;">
-                        Criteria Progress: {p.current_value} / {p.target_value}
+                        Criteria Progress: {int(p.current_value)} / {int(p.target_value)}
                     </div>
                 </div>
                 """,

@@ -11,7 +11,7 @@ import streamlit as st
 from src.database import Database
 from src.knowledge_graph import KnowledgeGraphService
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import render_hero_banner
+from src.ui.theme import escape_text, render_hero_banner
 
 
 def render_knowledge_page(db: Database, kg_service: KnowledgeGraphService) -> None:
@@ -73,9 +73,11 @@ def render_knowledge_page(db: Database, kg_service: KnowledgeGraphService) -> No
             bg_col = "#183B32" if is_active else "#f0fdf4"
             text_col = "#FCFAF4" if is_active else "#183B32"
             border_col = "#183B32" if is_active else "#c8d8be"
+            esc_t_rank = escape_text(t.rank or "Taxon")
+            esc_t_sci = escape_text(t.scientific_name)
             lineage_chips.append(
                 f'<span style="background:{bg_col}; color:{text_col}; border:1px solid {border_col}; padding:5px 12px; border-radius:20px; font-size:0.85rem; font-weight:600;">'
-                f"{t.rank or 'Taxon'}: *{t.scientific_name}*</span>"
+                f"{esc_t_rank}: *{esc_t_sci}*</span>"
             )
 
         st.markdown(
@@ -93,22 +95,33 @@ def render_knowledge_page(db: Database, kg_service: KnowledgeGraphService) -> No
     col_node_info, col_edges = st.columns([1, 1])
 
     with col_node_info:
+        esc_sci_name = escape_text(target_taxon.scientific_name)
+        esc_rank = escape_text(target_taxon.rank or "UNKNOWN")
+        esc_status = escape_text(target_taxon.status or "ACCEPTED")
+        esc_kingdom = escape_text(target_taxon.kingdom or "N/A")
+        esc_phylum = escape_text(target_taxon.phylum or "N/A")
+        esc_class = escape_text(target_taxon.class_name or "N/A")
+        esc_order = escape_text(target_taxon.order_name or "N/A")
+        esc_family = escape_text(target_taxon.family or "N/A")
+        esc_genus = escape_text(target_taxon.genus or "N/A")
+        esc_taxon_id = escape_text(str(target_taxon.taxon_id))
+
         st.markdown(
             f"""
             <div class="specimen-card" style="border-left: 5px solid #183B32;">
                 <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #777E73;">Active Graph Node</div>
-                <h3 style="margin: 4px 0 2px 0;">{target_taxon.scientific_name}</h3>
+                <h3 style="margin: 4px 0 2px 0;">{esc_sci_name}</h3>
                 <div class="latin-binomial" style="font-size: 0.95rem; margin-bottom: 8px;">
-                    Rank: <span class="rank-pill">{target_taxon.rank or 'UNKNOWN'}</span> &bull; Status: {target_taxon.status or 'ACCEPTED'}
+                    Rank: <span class="rank-pill">{esc_rank}</span> &bull; Status: {esc_status}
                 </div>
                 <div style="font-size: 0.85rem; color: #555; line-height: 1.6;">
-                    Kingdom: <strong>{target_taxon.kingdom or 'N/A'}</strong><br/>
-                    Phylum: <strong>{target_taxon.phylum or 'N/A'}</strong><br/>
-                    Class: <strong>{target_taxon.class_name or 'N/A'}</strong><br/>
-                    Order: <strong>{target_taxon.order_name or 'N/A'}</strong><br/>
-                    Family: <strong>{target_taxon.family or 'N/A'}</strong><br/>
-                    Genus: <strong>{target_taxon.genus or 'N/A'}</strong><br/>
-                    GBIF Taxon Key: <code>{target_taxon.taxon_id}</code>
+                    Kingdom: <strong>{esc_kingdom}</strong><br/>
+                    Phylum: <strong>{esc_phylum}</strong><br/>
+                    Class: <strong>{esc_class}</strong><br/>
+                    Order: <strong>{esc_order}</strong><br/>
+                    Family: <strong>{esc_family}</strong><br/>
+                    Genus: <strong>{esc_genus}</strong><br/>
+                    GBIF Taxon Key: <code>{esc_taxon_id}</code>
                 </div>
             </div>
             """,
@@ -116,14 +129,18 @@ def render_knowledge_page(db: Database, kg_service: KnowledgeGraphService) -> No
         )
 
         st.markdown("#### 📜 Data Provenance & Open Licensing")
+        esc_provider = escape_text(target_taxon.data_provider)
+        esc_licence = escape_text(target_taxon.licence)
+        esc_attr = escape_text(target_taxon.attribution)
+        esc_retrieved = escape_text(target_taxon.retrieved_at[:10] if target_taxon.retrieved_at else "")
         st.markdown(
             f"""
             <div class="provenance-tag">
-                Authority: {target_taxon.data_provider}<br/>
+                Authority: {esc_provider}<br/>
                 Dataset: GBIF Backbone Taxonomy<br/>
-                Licence: {target_taxon.licence} (CC BY 4.0)<br/>
-                Attribution: {target_taxon.attribution}<br/>
-                Retrieved: {target_taxon.retrieved_at[:10]}
+                Licence: {esc_licence} (CC BY 4.0)<br/>
+                Attribution: {esc_attr}<br/>
+                Retrieved: {esc_retrieved}
             </div>
             """,
             unsafe_allow_html=True,

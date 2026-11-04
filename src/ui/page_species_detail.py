@@ -13,6 +13,7 @@ from src.collection_service import CollectionService
 from src.database import Database
 from src.knowledge_graph import KnowledgeGraphService
 from src.ui.common import inject_custom_styles, render_breadcrumbs, render_security_notice
+from src.ui.theme import escape_text
 
 # Curated specimen photography catalog (strictly documented source, author, CC licence)
 CURATED_SPECIMEN_ASSETS = {
@@ -128,14 +129,18 @@ def render_species_detail_page(
     similar = specimen_asset.get("similar_taxa", [])
 
     # Main Header
-    common_title = f"{taxon.common_name} — " if taxon.common_name else ""
+    esc_common = escape_text(taxon.common_name)
+    esc_sci = escape_text(taxon.scientific_name)
+    esc_fam = escape_text(taxon.family or "Biota")
+    esc_rank = escape_text(taxon.rank or "SPECIES")
+    common_title = f"{esc_common} — " if esc_common else ""
     st.markdown(
         f"""
         <div style="margin-bottom: 1.5rem;">
             <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #718568; font-weight: 700;">
-                {taxon.family or 'Biota'} &bull; <span class="rank-pill">{taxon.rank or 'SPECIES'}</span>
+                {esc_fam} &bull; <span class="rank-pill">{esc_rank}</span>
             </div>
-            <h1 style="margin: 0.2rem 0; font-size: 2.4rem;">{common_title}<span class="latin-binomial">*{taxon.scientific_name}*</span></h1>
+            <h1 style="margin: 0.2rem 0; font-size: 2.4rem;">{common_title}<span class="latin-binomial">*{esc_sci}*</span></h1>
         </div>
         """,
         unsafe_allow_html=True,
@@ -153,7 +158,7 @@ def render_species_detail_page(
                 <div style="background: #f4efe4; border: 2px dashed #ded6c5; border-radius: 10px; height: 320px; display: flex; align-items: center; justify-content: center; text-align: center; color: #777E73; padding: 20px;">
                     <div>
                         <div style="font-size: 2.5rem; margin-bottom: 8px;">🌿</div>
-                        <div style="font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: #183B32;">{taxon.scientific_name}</div>
+                        <div style="font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: #183B32;">{esc_sci}</div>
                         <div style="font-size: 0.8rem; margin-top: 4px;">Morphological photographic specimen on file in GBIF archive.</div>
                     </div>
                 </div>
@@ -175,7 +180,8 @@ def render_species_detail_page(
         if similar:
             st.markdown("### 👥 Similar Taxa & Lookalikes")
             for sim in similar:
-                st.markdown(f"- <span class='latin-binomial'>*{sim}*</span>", unsafe_allow_html=True)
+                esc_sim = escape_text(sim)
+                st.markdown(f"- <span class='latin-binomial'>*{esc_sim}*</span>", unsafe_allow_html=True)
 
     with col_meta:
         # Collection Status Card
@@ -231,24 +237,32 @@ def render_species_detail_page(
                 is_target = node.taxon_id == taxon_id
                 prefix = "➔ " if is_target else "&nbsp;&nbsp;&bull; "
                 weight = "font-weight: 700; color: #183B32;" if is_target else "color: #555;"
+                esc_n_rank = escape_text(node.rank or "Rank")
+                esc_n_sci = escape_text(node.scientific_name)
                 st.markdown(
-                    f"{prefix}<span style='font-size:0.85rem;'>{node.rank or 'Rank'}:</span> <strong style='{weight}'>*{node.scientific_name}*</strong>",
+                    f"{prefix}<span style='font-size:0.85rem;'>{esc_n_rank}:</span> <strong style='{weight}'>*{esc_n_sci}*</strong>",
                     unsafe_allow_html=True,
                 )
 
         st.markdown("---")
         # Metadata & Attribution Box
         st.markdown("### 📜 Provenance & Licensing")
+        esc_prov = escape_text(taxon.data_provider)
+        esc_key = escape_text(str(taxon.taxon_id))
+        esc_stat = escape_text(taxon.status or "ACCEPTED")
+        esc_lic = escape_text(taxon.licence)
+        esc_attr = escape_text(taxon.attribution)
+        esc_ret = escape_text(taxon.retrieved_at[:10] if taxon.retrieved_at else "")
         st.markdown(
             f"""
             <div class="provenance-tag">
-                <strong>Taxonomic Authority:</strong> {taxon.data_provider}<br/>
+                <strong>Taxonomic Authority:</strong> {esc_prov}<br/>
                 <strong>Dataset:</strong> GBIF Backbone Taxonomy<br/>
-                <strong>Usage Key:</strong> {taxon.taxon_id}<br/>
-                <strong>Status:</strong> {taxon.status or 'ACCEPTED'}<br/>
-                <strong>Licence:</strong> {taxon.licence} (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a>)<br/>
-                <strong>Citation:</strong> {taxon.attribution}<br/>
-                <strong>Retrieved:</strong> {taxon.retrieved_at[:10]}
+                <strong>Usage Key:</strong> {esc_key}<br/>
+                <strong>Status:</strong> {esc_stat}<br/>
+                <strong>Licence:</strong> {esc_lic} (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>)<br/>
+                <strong>Citation:</strong> {esc_attr}<br/>
+                <strong>Retrieved:</strong> {esc_ret}
             </div>
             """,
             unsafe_allow_html=True,
@@ -279,16 +293,21 @@ def render_species_detail_page(
 
     if obs_rows:
         for row in obs_rows:
-            tag = f"[{row['provenance']}] " if row["provenance"] == "DEMO DATA" else ""
+            tag = f"[{escape_text(row['provenance'])}] " if row["provenance"] == "DEMO DATA" else ""
+            esc_u = escape_text(row['username'])
+            esc_ts = escape_text(row['observation_timestamp'][:10] if row['observation_timestamp'] else "")
+            esc_status = escape_text(row['moderation_status'])
+            esc_fn = escape_text(row['field_notes'] or 'No natural history notes entered.')
+            loc_div = f'<div style="font-size:0.75rem; color:#A66B48; margin-top:2px;">Location: {escape_text(row["coarse_location"])}</div>' if row['coarse_location'] else ''
             st.markdown(
                 f"""
                 <div style="background:#ffffff; border:1px solid #e3ddd0; border-radius:6px; padding:10px 14px; margin-bottom:8px;">
                     <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#777E73;">
-                        <span>{tag}Observer: <strong>@{row['username']}</strong> &bull; {row['observation_timestamp'][:10]}</span>
-                        <span class="status-pill-{row['moderation_status'].lower() if 'status-pill-' + row['moderation_status'].lower() in ['status-pill-accepted', 'status-pill-pending'] else 'pending'}">{row['moderation_status']}</span>
+                        <span>{tag}Observer: <strong>@{esc_u}</strong> &bull; {esc_ts}</span>
+                        <span class="status-pill-{esc_status.lower() if 'status-pill-' + esc_status.lower() in ['status-pill-accepted', 'status-pill-pending'] else 'pending'}">{esc_status}</span>
                     </div>
-                    <div style="font-size:0.9rem; margin-top:4px;">{row['field_notes'] or 'No natural history notes entered.'}</div>
-                    {f'<div style="font-size:0.75rem; color:#A66B48; margin-top:2px;">Location: {row["coarse_location"]}</div>' if row['coarse_location'] else ''}
+                    <div style="font-size:0.9rem; margin-top:4px;">{esc_fn}</div>
+                    {loc_div}
                 </div>
                 """,
                 unsafe_allow_html=True,
