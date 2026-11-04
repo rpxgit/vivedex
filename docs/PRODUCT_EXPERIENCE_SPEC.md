@@ -147,3 +147,4 @@ Vivédex Platform
   - Projects and Expeditions (Title, description, and habitat)
   - Observations (Candidate name, locality, and field notes)
   - Public Researchers (Display name, username, and biography)
+

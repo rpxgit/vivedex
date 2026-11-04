@@ -82,3 +82,4 @@ def render_organisations_page(db: Database) -> None:
                         )
                         st.success(f"Organisation '{new_o.name}' registered!")
                         st.rerun()
+

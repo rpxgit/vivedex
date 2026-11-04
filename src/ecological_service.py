@@ -535,3 +535,4 @@ class EcologicalService:
                 (site_id,),
             )
             return [dict(r) for r in cursor.fetchall()]
+

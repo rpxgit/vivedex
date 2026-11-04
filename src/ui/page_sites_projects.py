@@ -254,3 +254,4 @@ def render_sites_projects_page(db: Database) -> None:
                             )
                             st.success(f"Expedition '{exp.title}' created successfully!")
                             st.rerun()
+

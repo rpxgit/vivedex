@@ -134,3 +134,4 @@ class SearchService:
             researchers=researchers,
             total_matches=total,
         )
+

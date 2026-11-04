@@ -222,3 +222,4 @@ def render_quests_page(db: Database) -> None:
                     st.caption("✅ Milestone Completed")
                 else:
                     st.caption(f"{m.target_count - m.current_progress} remaining")
+

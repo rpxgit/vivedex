@@ -236,3 +236,4 @@ The Vivédex product experience is fully reconstructed:
 - The interface now presents a cohesive museum-grade botanical atlas aesthetic.
 - The platform incorporates Restor.eco ecological habitats, Habitica field habits, and ORCID researcher passports into a unified citizen-science system.
 - The running application is active locally on `http://localhost:8502`.
+

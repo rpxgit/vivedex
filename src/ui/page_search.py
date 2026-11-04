@@ -195,3 +195,4 @@ def render_search_page(db: Database) -> None:
                     """,
                     unsafe_allow_html=True,
                 )
+

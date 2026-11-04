@@ -282,3 +282,4 @@ class PassportService:
                 (provenance_state, output_id),
             )
             return cursor.rowcount > 0
+
