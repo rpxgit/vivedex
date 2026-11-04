@@ -215,7 +215,7 @@ Executed the full automated test suite with Python 3.14 on Windows:
   - `6ac9aa1`: docs: record exact commit hash in RUN 007 log
   - `0538346`: feat: add quick demo account switch in sidebar for rapid testing
   - `66e69bf`: refactor: restructure UI layout with modular page components and botanical theme
-  - Current commit adds `docs/run-logs/007b-experience-reconstruction.md`.
+  - `d8582a1`: docs: add RUN 007B experience reconstruction run log
 - **Merge Status:** Preserved on `feat/platform-prototype`. NOT merged into `main`.
 
 ---
