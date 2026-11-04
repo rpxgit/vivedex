@@ -2,6 +2,12 @@ import os
 import streamlit as st
 from PIL import Image
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from src.backend import VivedexBackend
 from src.image_processor import ImageValidationError
 from src.meta_adapter import MetaAPIConfigurationError, MetaAPIRequestError
@@ -171,7 +177,9 @@ if "result" in st.session_state:
                 st.markdown(hierarchy_str)
 
             st.caption(
-                f"Source: {gbif.provider} ({gbif.dataset}) | Licence: {gbif.licence} | Retrieved: {gbif.retrieved_at}"
+                f"Taxonomy Source: {gbif.provider} ({gbif.dataset}) | "
+                f"Attribution: GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei | "
+                f"Licence: [{gbif.licence}](https://creativecommons.org/licenses/by/4.0/) | Retrieved: {gbif.retrieved_at}"
             )
     else:
         st.info("No taxonomic verification performed.")

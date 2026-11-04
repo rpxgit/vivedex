@@ -11,7 +11,7 @@ Vivédex turns an organism photograph into a cautious, explainable candidate ide
 Modern biodiversity discovery requires a balance between rapid multimodal AI inference and rigorous taxonomic provenance:
 - **AI identifications are candidate suggestions, not confirmed scientific facts.**
 - **Taxonomic reconciliation must preserve authoritative sources.** Vivédex links proposed binomials to the Global Biodiversity Information Facility (GBIF) Backbone Taxonomy.
-- **Privacy and provenance are first-class principles.** Images are processed in-memory with EXIF metadata stripped; data licensing metadata (CC0/CC BY) is preserved for downstream reuse.
+- **Privacy and provenance are first-class principles.** Images are processed in-memory with EXIF metadata stripped; data licensing metadata (e.g. GBIF CC BY 4.0) is preserved for downstream reuse.
 
 ---
 
@@ -113,7 +113,7 @@ py -m unittest discover -s tests -p "test_*.py" -v
 
 ## 7. Data Sources & Provenance
 
-- **Taxonomic Backbone:** [Global Biodiversity Information Facility (GBIF)](https://www.gbif.org) Backbone Taxonomy. Data is accessed via the public GBIF Species API and licensed under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
+- **Taxonomic Backbone:** [Global Biodiversity Information Facility (GBIF)](https://www.gbif.org) Backbone Taxonomy. Data is accessed via the public GBIF Species API and licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Attribution: *GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei*.
 - **AI Inference:** Meta Model API (`muse-spark-1.3`).
 - **Data Policy:** For detailed information on external data handling, refer to `Vivédex Data Licensing and Provenance Policy.md`.
 

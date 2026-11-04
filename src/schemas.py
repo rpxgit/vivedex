@@ -111,8 +111,12 @@ class GBIFMatchResult(BaseModel):
         description="ISO 8601 timestamp when GBIF was queried."
     )
     licence: str = Field(
-        default="CC0 1.0 Universal",
-        description="License covering GBIF Backbone Taxonomy metadata."
+        default="CC BY 4.0",
+        description="License covering GBIF Backbone Taxonomy metadata (https://creativecommons.org/licenses/by/4.0/)."
+    )
+    attribution: str = Field(
+        default="GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei",
+        description="Mandatory citation for GBIF Backbone Taxonomy."
     )
 
 

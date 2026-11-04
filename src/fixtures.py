@@ -58,7 +58,8 @@ def get_demo_fixture_result() -> VivedexResult:
         },
         source_url="https://www.gbif.org/species/5231190",
         retrieved_at=datetime.now(timezone.utc).isoformat(),
-        licence="CC0 1.0 Universal"
+        licence="CC BY 4.0",
+        attribution="GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei"
     )
 
     return VivedexResult(

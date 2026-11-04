@@ -5,6 +5,12 @@ import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from src.schemas import ModelIdentificationResult, CandidateIdentification
 
 
@@ -128,12 +134,24 @@ class MetaAPIAdapter:
                 status_code = resp.status
                 resp_bytes = resp.read()
         except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8", errors="replace")
-            raise MetaAPIRequestError(f"Meta Model API request failed (HTTP {e.code}): {err_body}") from e
+            # Sanitize error body: extract structured error message if JSON, avoid echoing request headers/tokens
+            safe_msg = f"HTTP {e.code}"
+            try:
+                err_body = e.read().decode("utf-8", errors="replace")
+                parsed_err = json.loads(err_body)
+                if isinstance(parsed_err, dict) and "error" in parsed_err:
+                    err_info = parsed_err["error"]
+                    if isinstance(err_info, dict) and "message" in err_info:
+                        safe_msg += f": {err_info['message']}"
+                    elif isinstance(err_info, str):
+                        safe_msg += f": {err_info}"
+            except Exception:
+                pass
+            raise MetaAPIRequestError(f"Meta Model API request failed ({safe_msg})") from e
         except urllib.error.URLError as e:
             raise MetaAPIRequestError(f"Failed to connect to Meta Model API: {str(e.reason)}") from e
         except Exception as e:
-            raise MetaAPIRequestError(f"Unexpected error communicating with Meta Model API: {str(e)}") from e
+            raise MetaAPIRequestError(f"Unexpected error communicating with Meta Model API: {type(e).__name__}") from e
 
         try:
             raw_json = json.loads(resp_bytes.decode("utf-8"))

@@ -31,7 +31,7 @@ The MVP executes a deterministic five-step workflow:
    - Enforces `Vivédex Data Licensing and Provenance Policy.md`.
    - Labels AI output as a candidate result, not a confirmed identification.
    - Attaches model identifier, provider, and timestamp.
-   - Attaches GBIF taxonomic backbone dataset reference, source URL, retrieval timestamp, and CC0 licence attribution.
+   - Attaches GBIF taxonomic backbone dataset reference, source URL, retrieval timestamp, and CC BY 4.0 licence attribution.
 
 5. **Presentation and Export:**
    - Displays uploaded image preview.
@@ -97,7 +97,8 @@ GBIF species match returns structured taxonomy according to this contract:
   },
   "source_url": "https://www.gbif.org/species/5231190",
   "retrieved_at": "2026-11-04T17:20:01Z",
-  "licence": "CC0 1.0 Universal"
+  "licence": "CC BY 4.0",
+  "attribution": "GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei"
 }
 ```
 
@@ -143,7 +144,8 @@ GBIF species match returns structured taxonomy according to this contract:
     "usage_key": 5231190,
     "source_url": "https://www.gbif.org/species/5231190",
     "retrieved_at": "2026-11-04T17:20:01Z",
-    "licence": "CC0 1.0 Universal"
+    "licence": "CC BY 4.0",
+    "attribution": "GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei"
   },
   "disclaimer": "AI-generated identifications are candidate suggestions, not confirmed scientific facts. Taxonomy verified against the GBIF Backbone Taxonomy."
 }

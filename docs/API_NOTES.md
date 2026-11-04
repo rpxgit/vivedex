@@ -68,6 +68,7 @@
 * **Official Documentation:** `https://www.gbif.org/developer/species`
 * **Endpoint URL:** `https://api.gbif.org/v1/species/match`
 * **Authentication:** Open access (no authentication or API key required).
+* **Dataset Licence & Attribution:** GBIF Backbone Taxonomy is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Attribution: *GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei*.
 * **Status:** VERIFIED
 
 ### Request Parameters

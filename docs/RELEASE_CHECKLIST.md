@@ -24,7 +24,7 @@
 - [x] **No Local `.env` Tracked:** `.env.example` contains only safe placeholder names; `.env` is absent from git.
 - [x] **In-Memory Image Handling:** Uploaded images are never saved to disk; processed strictly in memory.
 - [x] **EXIF Stripping:** Camera EXIF tags and geolocation coordinates are stripped before transmission.
-- [x] **Data Licensing Compliance:** Aligned with `Vivédex Data Licensing and Provenance Policy.md`; CC0 GBIF backbone license and provider URLs preserved.
+- [x] **Data Licensing Compliance:** Aligned with `Vivédex Data Licensing and Provenance Policy.md`; CC BY 4.0 GBIF backbone license and provider URLs preserved. Attribution: *GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei*.
 - [x] **Sensitive Species Protection:** No GPS coordinates or sensitive geographic locations collected or exposed.
 
 ---

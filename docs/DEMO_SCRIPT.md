@@ -47,7 +47,7 @@
 ## Part 5: JSON Export & Provenance Record (2:20 – 3:00)
 - **Visual:** Click **`Download JSON Report`** and expand the JSON viewer.
 - **Narrator (Speaking):**
-  > "Finally, the user can export a reproducible observation record in JSON. This record packages the model's visual evidence, the GBIF taxonomy keys, retrieval timestamps, and CC0 data licensing metadata into one structured file ready for downstream research.
+  > "Finally, the user can export a reproducible observation record in JSON. This record packages the model's visual evidence, the GBIF taxonomy keys, retrieval timestamps, and CC BY 4.0 data licensing metadata into one structured file ready for downstream research.
   >
   > Vivédex combines the perception of Meta models with open scientific standards to deliver cautious, trustworthy biodiversity knowledge. Thank you!"
 

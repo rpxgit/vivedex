@@ -107,6 +107,7 @@ class GBIFAdapter:
             hierarchy=hierarchy if hierarchy else None,
             source_url=source_url,
             retrieved_at=retrieved_at,
-            licence="CC0 1.0 Universal"
+            licence="CC BY 4.0",
+            attribution="GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei"
         )
 
