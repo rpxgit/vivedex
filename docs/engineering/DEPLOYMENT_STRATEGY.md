@@ -116,3 +116,4 @@ When ready to implement containerization, execute the following backlog items:
 - **Recommended Action:** Support the `VIVEDEX_DB_PATH` environment variable. Default to an external data directory or volume mount path outside the source tree.
 - **Dependencies:** `src/database.py`.
 - **Estimated Effort:** 1 hour.
+

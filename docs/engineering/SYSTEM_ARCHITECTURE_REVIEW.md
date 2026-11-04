@@ -185,3 +185,4 @@ The modular monolith will scale effectively to 5,000+ active naturalists when su
 3. **Phase 3 (Scale):**
    - Extract FastAPI endpoints for native mobile or external client access.
    - Move long-running inference tasks to a lightweight asynchronous task queue (Celery or RQ).
+

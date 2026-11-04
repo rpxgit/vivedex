@@ -193,3 +193,4 @@ All findings adhere to the ASD-STE100 technical standard.
 - **Recommended Action:** Read `VIVEDEX_DB_PATH` from `os.getenv()`, falling back to `DEFAULT_DB_PATH`.
 - **Dependencies:** `src/database.py`.
 - **Estimated Effort:** 1 hour.
+

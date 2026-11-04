@@ -139,3 +139,4 @@ The evaluation harness must compute the following metrics:
 - **Abstention Precision:** Model correctly identifies insufficient evidence or suggests higher taxonomic rank (`GENUS` or `FAMILY`) rather than hallucinating species.
 - **Negative Control Rejection Rate:** Model correctly identifies non-organisms and refrains from proposing biological taxa.
 - **Latency Distribution:** Record p50, p90, and p99 latency in seconds.
+
