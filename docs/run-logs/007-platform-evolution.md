@@ -204,6 +204,7 @@ All implemented features strictly map to the RUN 007 requirements. No external d
 
 ## 16. Git Branch and Commit
 - **Branch:** `feat/platform-prototype`
+- **Commit:** `edfc05e32f6694eb5b29f35138d7b1ffd14d28ea`
 - **Working Tree:** Cleaned and ready for review.
 - **Main Branch Protection:** `main` was left intact; no merge was performed.
 
