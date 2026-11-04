@@ -113,6 +113,30 @@ Restricted to users with the `admin` role:
 - System audit log inspector.
 - Curated demonstration data loader.
 
+### 3.10 Field Sites & Expeditions (Restor.eco)
+Ecological context and monitored field stations:
+- Physical habitat sites with geographic coordinates, elevation, and biome classification.
+- Dynamic species richness computed from actual observations linked to the site.
+- Active conservation projects and time-bounded field expeditions.
+
+### 3.11 Quests & Habits (Habitica)
+Non-punitive naturalist progression:
+- Daily field habits (e.g. Daily Field Scan, Botanical Journaling).
+- Weekly recurring goals (e.g. BioBlitz, Taxonomic Breadth).
+- Milestone quests rewarding XP without penalizing missed days.
+
+### 3.12 Researcher Passport (ORCID)
+Persistent scientific attribution:
+- Institutional affiliations and research interests.
+- Scholarly and field research outputs (datasets, checklists, reports, publications).
+- Explicit provenance states: `SELF_REPORTED`, `SOURCE_LINKED`, `PLATFORM_REVIEWED`, `EXTERNALLY_VERIFIED`.
+
+### 3.13 Global Discovery Search
+Unified cross-entity querying across taxa, field sites, expeditions, projects, observations, and researchers.
+
+### 3.14 Partner Organisations
+Directory of botanical gardens, universities, and conservation trusts collaborating with Vivédex.
+
 ---
 
 ## 4. Authentication and Access Control

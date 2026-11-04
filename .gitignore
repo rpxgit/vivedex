@@ -13,7 +13,8 @@ __pycache__/
 *.token
 
 # Streamlit config / cache
-.streamlit/
+.streamlit/*
+!.streamlit/config.toml
 
 # Local SQLite Database
 data/

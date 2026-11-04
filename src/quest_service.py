@@ -188,16 +188,16 @@ class QuestService:
                     INSERT INTO user_quests (user_id, quest_id, current_progress, is_completed, completed_at, last_logged_at)
                     VALUES (?, ?, ?, ?, CASE WHEN ? = 1 THEN ? ELSE NULL END, ?)
                     ON CONFLICT(user_id, quest_id) DO UPDATE SET
-                        current_progress = excluded.current_progress,
-                        is_completed = CASE WHEN user_quests.is_completed = 1 THEN 1 ELSE excluded.is_completed END,
+                        current_progress = MAX(user_quests.current_progress, excluded.current_progress),
+                        is_completed = CASE WHEN user_quests.is_completed = 1 OR MAX(user_quests.current_progress, excluded.current_progress) >= ? THEN 1 ELSE excluded.is_completed END,
                         completed_at = CASE 
                             WHEN user_quests.completed_at IS NOT NULL THEN user_quests.completed_at 
-                            WHEN excluded.is_completed = 1 THEN excluded.completed_at 
+                            WHEN excluded.is_completed = 1 OR MAX(user_quests.current_progress, excluded.current_progress) >= ? THEN COALESCE(user_quests.completed_at, ?) 
                             ELSE NULL 
                         END,
                         last_logged_at = excluded.last_logged_at;
                     """,
-                    (user_id, q_id, val, is_complete, is_complete, now, now),
+                    (user_id, q_id, val, is_complete, is_complete, now, now, target, target, now),
                 )
 
     def log_habit_action(self, user_id: int, quest_id: int) -> bool:

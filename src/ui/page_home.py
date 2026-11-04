@@ -28,6 +28,8 @@ def render_home_page(
     inject_custom_styles()
     render_security_notice()
 
+    st.title("🌿 Vivédex Expedition Hub")
+
     current_user: AuthenticatedUser | None = st.session_state.get("current_user")
     auth_service = st.session_state.get("auth_service", AuthService(db))
     eco_service = EcologicalService(db)
@@ -37,9 +39,9 @@ def render_home_page(
     # 1. Unauthenticated Visitor Landing Page
     # -------------------------------------------------------------------------
     if current_user is None:
-        # Editorial Hero Banner (Single grand header, no duplicate titles)
+        # Editorial Hero Banner (Distinct focus, no duplicate titles)
         render_hero_banner(
-            title="Vivédex Biodiversity Platform",
+            title="Field Ecology & Natural History Platform",
             subtitle="An evidence-based natural history discovery, identification, and specimen collection system backed by multimodal AI and the global GBIF Backbone Taxonomy.",
         )
 
