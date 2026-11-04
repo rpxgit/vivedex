@@ -1,8 +1,16 @@
 # Vivédex
 
-**Cautious, explainable organism identification backed by authoritative GBIF taxonomy.**
+**A biodiversity discovery, identification, collection, and contribution platform.**
 
-Vivédex turns an organism photograph into a cautious, explainable candidate identification and a taxonomically resolved, provenance-backed species card.
+Vivédex turns an organism photograph into a cautious, explainable candidate identification and a taxonomically resolved, provenance-backed species card, integrated with personal collection catalogs, gamified field milestones, and community moderation.
+
+---
+
+## Platform Evolution & Specifications
+
+- **Current Platform Specification (v0.2.0):** [`docs/PLATFORM_SPEC.md`](docs/PLATFORM_SPEC.md)
+- **Data Model Specification:** [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md)
+- **Historical V0.1 MVP Specification:** [`docs/MVP_SPEC.md`](docs/MVP_SPEC.md)
 
 ---
 
@@ -11,19 +19,27 @@ Vivédex turns an organism photograph into a cautious, explainable candidate ide
 Modern biodiversity discovery requires a balance between rapid multimodal AI inference and rigorous taxonomic provenance:
 - **AI identifications are candidate suggestions, not confirmed scientific facts.**
 - **Taxonomic reconciliation must preserve authoritative sources.** Vivédex links proposed binomials to the Global Biodiversity Information Facility (GBIF) Backbone Taxonomy.
-- **Privacy and provenance are first-class principles.** Images are processed in-memory with EXIF metadata stripped; data licensing metadata (e.g. GBIF CC BY 4.0) is preserved for downstream reuse.
+- **Privacy and provenance are first-class principles.** Images are processed in-memory with EXIF metadata stripped; data licensing metadata (e.g. GBIF CC BY 4.0) is preserved across all records and exports.
+- **Engaging citizen science.** Inspired by Pokédex, Habitica, and ORCID, naturalists earn experience points, unlock achievement badges, and curate persistent field journals.
 
 ---
 
-## 2. Key Features
+## 2. Key Platform Features
 
-- **Single Image Analysis:** Upload JPG, JPEG, PNG, or WebP observations up to 8 MB.
-- **In-Memory EXIF Removal:** Image metadata and orientation are processed strictly in memory without persistent file storage.
-- **Meta Model API Integration:** Uses `muse-spark-1.3` via `https://api.meta.ai/v1/chat/completions` to identify visible traits, candidate taxa, lookalikes, and uncertainty notes without invented numeric probabilities.
-- **GBIF Species Reconciliation:** Validates scientific names against the GBIF Backbone Taxonomy, retrieving canonical names, taxonomic rank, status, GBIF match scores, and direct links to GBIF species records.
-- **Clear Separation of Concerns:** The interface keeps AI candidate suggestions strictly distinct from GBIF taxonomic verification.
-- **Offline Demo Fixture Mode:** Allows full UI testing and demonstration when `MODEL_API_KEY` is not present in the environment.
-- **One-Click JSON Export:** Downloads consolidated observation records with full taxonomic hierarchy and attribution metadata.
+- **Multi-Page Discovery Portal:**
+  1. **Home:** Contributor summary, metrics, level progress bar, recent observations, and milestone previews.
+  2. **Explore Dex:** Query GBIF Backbone Taxonomy by scientific or vernacular name, inspect hierarchy, and save directly to collections.
+  3. **Identify:** Multimodal AI vision analysis with Meta Muse Spark, in-memory EXIF stripping, candidate traits, lookalikes, uncertainty, and persistent observation recording.
+  4. **My Collection:** Personal species catalog tracking first/latest encounters, cumulative encounter counts, and personal field notes.
+  5. **Field Journal:** Persistent observation diary with editable notes, coarse location logging, and moderation status inspection.
+  6. **Achievements:** Rule-based badge engine (First Encounter, Collector, Family Explorer, Field Naturalist, Contributor) with XP and player levels.
+  7. **Researcher Profile:** Unique Contributor ID (`VDX-XXXXXX`), biography, and optional self-reported ORCID URL.
+  8. **Knowledge Explorer:** Interactive SQLite-backed taxonomic knowledge graph with lineage trees, child nodes, and connected sightings.
+  9. **Admin Console:** Role-protected console with platform metrics, user directory, observation moderation queue, and security audit logs.
+- **Local-First SQLite Architecture:** Zero cloud database dependencies; stores nodes and relationships locally in `data/vivedex.sqlite3`.
+- **Cryptographic Authentication:** PBKDF2-HMAC-SHA256 password hashing with per-user salts and automatic first-user administrator bootstrap.
+- **Controlled Demo Dataset:** One-click loader for curated demonstration records explicitly stamped with `DEMO DATA` provenance.
+
 
 ---
 
