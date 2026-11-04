@@ -11,6 +11,7 @@ Produce formal engineering reviews and a technical debt register conforming to t
 ## 2. Repository State
 - **Working Branch:** `feat/platform-prototype`
 - **Base Branch:** `main`
+- **Commit Hash:** `93c47e6`
 - **Host OS:** Windows 11
 - **Python Runtime:** Python 3.14.7 (`C:\Users\HP\AppData\Local\Python\pythoncore-3.14-64\python.exe`)
 - **Web Framework:** Streamlit 1.66.1
