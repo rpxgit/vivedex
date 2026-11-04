@@ -1,7 +1,8 @@
-"""Home expedition hub for Vivédex.
+"""Home expedition hub and public landing experience for Vivédex.
 
-Presents a naturalist expedition dashboard, biodiversity metrics, recent discoveries,
-current expedition quests, and public onboarding landing page.
+Presents a botanical editorial dashboard, live biodiversity metrics,
+the core workflow (Discover → Identify → Verify → Collect → Learn → Contribute),
+featured organisms, and active field habits.
 """
 
 from __future__ import annotations
@@ -9,9 +10,11 @@ from __future__ import annotations
 import streamlit as st
 
 from src.achievements import AchievementService
-from src.auth import AuthenticatedUser
+from src.auth import AuthenticatedUser, AuthenticationError, AuthService
 from src.collection_service import CollectionService
 from src.database import Database
+from src.ecological_service import EcologicalService
+from src.quest_service import QuestService
 from src.ui.common import inject_custom_styles, render_security_notice
 from src.ui.theme import escape_text, get_naturalist_rank, render_hero_banner
 
@@ -26,257 +29,310 @@ def render_home_page(
     render_security_notice()
 
     current_user: AuthenticatedUser | None = st.session_state.get("current_user")
+    auth_service = st.session_state.get("auth_service", AuthService(db))
+    eco_service = EcologicalService(db)
+    quest_service = QuestService(db)
 
-    # Title for Streamlit component tree and accessibility
-    st.title("🌿 Vivédex Expedition Hub")
-    st.caption("Empowering field naturalists and researchers to discover, identify, reconcile, and catalog biodiversity backed by authoritative GBIF taxonomy.")
-
-    # Grand Botanical Hero Banner
-    render_hero_banner(
-        title="🌿 Vivédex Expedition Hub",
-        subtitle="Empowering field naturalists and researchers to discover, identify, reconcile, and catalog biodiversity backed by authoritative GBIF taxonomy.",
-    )
-
-    # 1. Logged-Out Public Landing Experience
+    # -------------------------------------------------------------------------
+    # 1. Unauthenticated Visitor Landing Page
+    # -------------------------------------------------------------------------
     if current_user is None:
+        # Editorial Hero Banner (Single grand header, no duplicate titles)
+        render_hero_banner(
+            title="Vivédex Biodiversity Platform",
+            subtitle="An evidence-based natural history discovery, identification, and specimen collection system backed by multimodal AI and the global GBIF Backbone Taxonomy.",
+        )
+
+        # Core Workflow Pillars
         st.markdown(
             """
-            <div style="background: #ffffff; border: 1px solid #ded6c5; border-radius: 10px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 14px rgba(0,0,0,0.03);">
-                <div style="font-family: 'Cinzel', serif; font-size: 1.4rem; font-weight: 700; color: #183B32; margin-bottom: 0.5rem;">
-                    Welcome, Explorer
+            <div style="background: #FCFAF4; border: 1px solid #D8D1C2; border-radius: 10px; padding: 1.8rem 2rem; margin-bottom: 1.8rem; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+                <div style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; color: #183B32; margin-bottom: 0.4rem;">
+                    The Naturalist Workflow
                 </div>
-                <p style="font-size: 1.05rem; color: #444; line-height: 1.6; margin-bottom: 1.2rem;">
-                    Vivédex is a citizen-science natural history platform. Identify wild flora and fauna with multimodal AI vision (Meta Muse Spark),
-                    verify proposed names against the <strong>GBIF Backbone Taxonomy</strong> under open CC BY 4.0 licensing,
-                    and build your personal biological encyclopedia.
-                </p>
-                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px; background: #fdfaf4; padding: 14px; border-radius: 8px; border: 1px solid #e8e0d0;">
-                        <strong style="color: #183B32;">🔍 Discover & Explore</strong><br/>
-                        <span style="font-size: 0.85rem; color: #666;">Browse birds, mammals, plants, fungi, and insects reconciled with global taxonomic backbones.</span>
-                    </div>
-                    <div style="flex: 1; min-width: 200px; background: #fdfaf4; padding: 14px; border-radius: 8px; border: 1px solid #e8e0d0;">
-                        <strong style="color: #183B32;">🌿 Identify Organisms</strong><br/>
-                        <span style="font-size: 0.85rem; color: #666;">Upload specimen photographs with in-memory EXIF stripping and explainable trait inspection.</span>
-                    </div>
-                    <div style="flex: 1; min-width: 200px; background: #fdfaf4; padding: 14px; border-radius: 8px; border: 1px solid #e8e0d0;">
-                        <strong style="color: #183B32;">🏆 Naturalist Ranks</strong><br/>
-                        <span style="font-size: 0.85rem; color: #666;">Progress from Observer to Biodiversity Steward by collecting species and documenting habitats.</span>
-                    </div>
+                <div style="font-size: 0.95rem; color: #4E5C53; margin-bottom: 1.4rem;">
+                    Six deliberate steps connecting field observation to global scientific knowledge.
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        col_act1, col_act2 = st.columns([1, 1])
-        with col_act1:
-            st.info("Log in or register via the sidebar to access your personal Dex, Field Journal, and achievements.")
-        with col_act2:
-            st.write("**Quick Expeditions:**")
-            col_b1, col_b2 = st.columns(2)
-            with col_b1:
-                if st.button("🌱 Identify Organism", type="primary", width="stretch"):
-                    st.session_state["nav_target"] = "Identify"
-                    st.rerun()
-            with col_b2:
-                if st.button("🔍 Explore Dex", width="stretch"):
-                    st.session_state["nav_target"] = "Explore"
-                    st.rerun()
-        return
-
-    # 2. Logged-In Naturalist Expedition Dashboard
-    profile = collection_service.get_user_profile(current_user.id)
-    gamification = achievement_service.get_user_gamification_stats(current_user.id)
-    badges = achievement_service.get_user_badges(current_user.id)
-    recent_obs = collection_service.get_user_observations(current_user.id)[:4]
-    all_quests = achievement_service.get_all_badge_progress(current_user.id)
-    active_quests = [q for q in all_quests if not q.is_earned]
-
-    rank_title = get_naturalist_rank(gamification.level)
-
-    # Contributor Overview Card
-    esc_disp_name = escape_text(current_user.display_name)
-    esc_vivedex_id = escape_text(current_user.vivedex_id)
-    esc_rank_title = escape_text(rank_title)
-    st.markdown(
-        f"""
-        <div class="specimen-card" style="border-left: 5px solid #183B32; margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
-                <div>
-                    <div style="font-size: 0.78rem; text-transform: uppercase; color: #777E73; font-weight: 700; letter-spacing: 0.05em;">Naturalist Station</div>
-                    <h2 style="margin: 0; color: #183B32; font-size: 1.8rem;">{esc_disp_name}</h2>
-                    <div style="font-size: 0.88rem; color: #A66B48; font-weight: 600; margin-top: 2px;">
-                        Level {int(gamification.level)} {esc_rank_title} &bull; Contributor ID: <code style="color:#183B32;">{esc_vivedex_id}</code>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px;">
+                    <div style="background: #FFFFFF; border: 1px solid #E3DDD0; border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 1.3rem; margin-bottom: 4px;">🔍</div>
+                        <div style="font-weight: 700; color: #183B32; font-size: 0.9rem;">1. Discover</div>
+                        <div style="font-size: 0.78rem; color: #4E5C53; margin-top: 4px;">Encounter living organisms across global habitats and field sites.</div>
+                    </div>
+                    <div style="background: #FFFFFF; border: 1px solid #E3DDD0; border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 1.3rem; margin-bottom: 4px;">🧠</div>
+                        <div style="font-weight: 700; color: #183B32; font-size: 0.9rem;">2. Identify</div>
+                        <div style="font-size: 0.78rem; color: #4E5C53; margin-top: 4px;">Extract visual morphological markers with multimodal AI vision.</div>
+                    </div>
+                    <div style="background: #FFFFFF; border: 1px solid #E3DDD0; border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 1.3rem; margin-bottom: 4px;">🌿</div>
+                        <div style="font-weight: 700; color: #183B32; font-size: 0.9rem;">3. Verify</div>
+                        <div style="font-size: 0.78rem; color: #4E5C53; margin-top: 4px;">Reconcile with GBIF Backbone Taxonomy with clear attribution.</div>
+                    </div>
+                    <div style="background: #FFFFFF; border: 1px solid #E3DDD0; border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 1.3rem; margin-bottom: 4px;">📚</div>
+                        <div style="font-weight: 700; color: #183B32; font-size: 0.9rem;">4. Collect</div>
+                        <div style="font-size: 0.78rem; color: #4E5C53; margin-top: 4px;">Preserve in your personal Vivédex and annotated field journal.</div>
+                    </div>
+                    <div style="background: #FFFFFF; border: 1px solid #E3DDD0; border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 1.3rem; margin-bottom: 4px;">🕸️</div>
+                        <div style="font-weight: 700; color: #183B32; font-size: 0.9rem;">5. Learn</div>
+                        <div style="font-size: 0.78rem; color: #4E5C53; margin-top: 4px;">Explore taxonomic hierarchies, synchronic families, and traits.</div>
+                    </div>
+                    <div style="background: #FFFFFF; border: 1px solid #E3DDD0; border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 1.3rem; margin-bottom: 4px;">🏅</div>
+                        <div style="font-weight: 700; color: #183B32; font-size: 0.9rem;">6. Contribute</div>
+                        <div style="font-size: 0.78rem; color: #4E5C53; margin-top: 4px;">Earn research passport credentials and contribute verified datasets.</div>
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <span class="dex-collected-tag" style="font-size: 0.82rem; padding: 4px 12px;">Rank: {esc_rank_title}</span>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # 4-Column Naturalist Metric Cards
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown(
-            f"""
-            <div class="naturalist-metric">
-                <div class="metric-val">{profile.observation_count if profile else 0}</div>
-                <div class="metric-label">Field Sightings</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            f"""
-            <div class="naturalist-metric">
-                <div class="metric-val">{profile.distinct_taxa_count if profile else 0}</div>
-                <div class="metric-label">Taxa In Dex</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with c3:
-        st.markdown(
-            f"""
-            <div class="naturalist-metric">
-                <div class="metric-val">{profile.family_count if profile else 0}</div>
-                <div class="metric-label">Families Documented</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with c4:
-        st.markdown(
-            f"""
-            <div class="naturalist-metric">
-                <div class="metric-val" style="color: #A66B48;">{gamification.total_xp}</div>
-                <div class="metric-label">Experience Points (XP)</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    st.write("")
-    # Level Progress Bar
-    next_rank = get_naturalist_rank(gamification.level + 1)
-    st.markdown(
-        f"**Level {gamification.level} Progress toward {next_rank}:** {gamification.xp_in_level} / {gamification.xp_for_next_level} XP ({gamification.level_progress_percentage}%)"
-    )
-    st.progress(min(1.0, max(0.0, gamification.level_progress_percentage / 100.0)))
+        # Live Platform Metrics
+        with db.connect() as conn:
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM taxa;")
+            total_taxa = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM observations;")
+            total_obs = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM field_sites;")
+            total_sites = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM expeditions WHERE status = 'IN_PROGRESS';")
+            active_exp = c.fetchone()[0]
 
-    st.markdown("---")
-
-    # Two Main Columns: Recent Discoveries & Quests
-    col_disc, col_quest = st.columns([11, 9])
-
-    with col_disc:
-        st.subheader("🌿 Recent Field Discoveries")
-        if recent_obs:
-            for obs in recent_obs:
-                prov_tag = f"[{escape_text(obs.provenance)}] " if obs.provenance == "DEMO DATA" else ""
-                status_class = (
-                    "status-pill-accepted"
-                    if obs.moderation_status == "ACCEPTED_FOR_CATALOG"
-                    else "status-pill-pending"
-                )
-                esc_obs_date = escape_text(obs.observation_timestamp[:10])
-                esc_obs_id = escape_text(obs.observation_id)
-                esc_mod_status = escape_text(obs.moderation_status)
-                esc_sci_name = escape_text(obs.candidate_scientific_name)
-                esc_field_notes = escape_text(obs.field_notes or "No natural history field notes entered.")
-                esc_location = escape_text(obs.coarse_location)
-                loc_html = f'<div style="font-size: 0.78rem; color: #A66B48; margin-top: 4px;">📍 {esc_location}</div>' if obs.coarse_location else ""
-
-                st.markdown(
-                    f"""
-                    <div class="specimen-card" style="padding: 1rem; margin-bottom: 0.8rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <span style="font-size: 0.76rem; color: #777E73;">{esc_obs_date} &bull; {esc_obs_id}</span>
-                            <span class="{status_class}">{esc_mod_status}</span>
-                        </div>
-                        <div style="font-size: 1.15rem; font-weight: 700; color: #183B32;">
-                            {prov_tag}<span class="latin-binomial">*{esc_sci_name}*</span>
-                        </div>
-                        <div style="font-size: 0.85rem; color: #555; margin-top: 4px;">
-                            {esc_field_notes}
-                        </div>
-                        {loc_html}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-        else:
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        with col_m1:
             st.markdown(
-                """
-                <div style="background: #faf7f0; border: 1px dashed #ded6c5; border-radius: 8px; padding: 20px; text-align: center; color: #777E73;">
-                    <div style="font-size: 1.6rem; margin-bottom: 6px;">📷</div>
-                    <div style="font-weight: 700; color: #183B32;">Your field journal is waiting.</div>
-                    <div style="font-size: 0.85rem; margin-top: 4px;">Take an organism photograph and analyze diagnostic traits to record your first discovery.</div>
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{total_taxa}</div>
+                    <div class="metric-label">Taxa Cataloged</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col_m2:
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{total_obs}</div>
+                    <div class="metric-label">Field Observations</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col_m3:
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{total_sites}</div>
+                    <div class="metric-label">Monitored Field Sites</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col_m4:
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{active_exp}</div>
+                    <div class="metric-label">Active Expeditions</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-        st.write("")
-        col_c1, col_c2 = st.columns(2)
-        with col_c1:
-            if st.button("🌱 Identify Organism Photograph", type="primary", width="stretch", key="home_cta_identify"):
-                st.session_state["nav_target"] = "Identify"
-                st.rerun()
-        with col_c2:
-            if st.button("🔍 Explore Full Dex Catalog", width="stretch", key="home_cta_explore"):
-                st.session_state["nav_target"] = "Explore"
-                st.rerun()
+        st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
 
-    with col_quest:
-        st.subheader("🎯 Active Naturalist Quests")
-        if active_quests:
-            for q in active_quests[:3]:
-                esc_q_icon = escape_text(q.icon)
-                esc_q_name = escape_text(q.name)
-                esc_q_desc = escape_text(q.description)
+        # Onboarding Access Box (Prominent Login / Register)
+        col_onboard, col_preview = st.columns([1, 1], gap="large")
+
+        with col_onboard:
+            st.markdown("### Naturalist Sign-In & Registration")
+            tab_landing_login, tab_landing_reg = st.tabs(["Sign In to Existing Account", "Create New Naturalist Account"])
+
+            with tab_landing_login:
+                with st.form("landing_login_form"):
+                    user_inp = st.text_input("Username", key="landing_user_in")
+                    pass_inp = st.text_input("Password", type="password", key="landing_pass_in")
+                    submit_btn = st.form_submit_button("Sign In to Vivédex", width="stretch")
+                    if submit_btn:
+                        try:
+                            user = auth_service.authenticate_user(user_inp, pass_inp)
+                            st.session_state["current_user"] = user
+                            st.session_state["active_user_id"] = user.id
+                            st.success(f"Welcome back, {escape_text(user.display_name)}!")
+                            st.rerun()
+                        except AuthenticationError as e:
+                            st.error(str(e))
+
+            with tab_landing_reg:
+                with st.form("landing_reg_form"):
+                    reg_user = st.text_input("Choose Username", key="landing_reg_user")
+                    reg_name = st.text_input("Full Naturalist Name", key="landing_reg_name")
+                    reg_pass = st.text_input("Password (min 8 characters)", type="password", key="landing_reg_pass")
+                    reg_btn = st.form_submit_button("Create Free Account", width="stretch")
+                    if reg_btn:
+                        try:
+                            user = auth_service.register_user(
+                                username=reg_user,
+                                password=reg_pass,
+                                display_name=reg_name,
+                            )
+                            st.session_state["current_user"] = user
+                            st.session_state["active_user_id"] = user.id
+                            st.success("Account created successfully! Welcome to Vivédex.")
+                            st.rerun()
+                        except AuthenticationError as e:
+                            st.error(str(e))
+
+        with col_preview:
+            st.markdown("### Featured Field Sites & Expeditions")
+            sites = eco_service.list_field_sites()[:2]
+            for s in sites:
                 st.markdown(
                     f"""
-                    <div class="quest-box">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 1.4rem;">{esc_q_icon}</span>
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #A66B48;">REWARD: +{int(q.xp_reward)} XP</span>
+                    <div style="background: #FFFFFF; border: 1px solid #D8D1C2; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <div style="font-weight: 700; color: #183B32; font-size: 1rem;">📍 {escape_text(s.name)}</div>
+                            <span class="rank-pill">{escape_text(s.country)}</span>
                         </div>
-                        <div style="font-size: 0.95rem; font-weight: 700; color: #183B32; margin: 4px 0;">{esc_q_name}</div>
-                        <div style="font-size: 0.8rem; color: #555; margin-bottom: 6px;">{esc_q_desc}</div>
-                        <div style="font-size: 0.76rem; font-weight: 700; color: #183B32;">Progress: {int(q.current_value)} / {int(q.target_value)}</div>
+                        <div style="font-size: 0.82rem; color: #8C5432; font-weight: 600; margin: 3px 0;">{escape_text(s.biome)} &bull; Elev. {s.elevation_m or 0}m</div>
+                        <div style="font-size: 0.85rem; color: #4E5C53; line-height: 1.4;">{escape_text(s.description)}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-                st.progress(min(1.0, q.current_value / max(1, q.target_value)))
-        else:
-            st.success("🎉 All initial naturalist milestone quests have been completed!")
 
-        st.markdown("---")
-        st.subheader(f"🎖️ Earned Milestones ({len(badges)})")
-        if badges:
-            for b in badges:
-                esc_b_icon = escape_text(b.icon)
-                esc_b_name = escape_text(b.name)
-                esc_b_desc = escape_text(b.description)
-                st.markdown(
-                    f"""
-                    <div style="background: #ffffff; border: 1px solid #e3ddd0; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 1.3rem;">{esc_b_icon}</span>
-                        <div>
-                            <div style="font-size: 0.88rem; font-weight: 700; color: #183B32;">{esc_b_name}</div>
-                            <div style="font-size: 0.75rem; color: #777E73;">{esc_b_desc}</div>
-                        </div>
+        return
+
+    # -------------------------------------------------------------------------
+    # 2. Authenticated Naturalist Expedition Hub
+    # -------------------------------------------------------------------------
+    gamification = achievement_service.get_user_gamification_stats(current_user.id)
+    rank_title = get_naturalist_rank(gamification.level)
+
+    # Hero Banner
+    render_hero_banner(
+        title=f"Expedition Hub &bull; {current_user.display_name}",
+        subtitle=f"Naturalist Level {gamification.level} {rank_title} &bull; Total Contribution: {gamification.total_xp} XP &bull; All systems operational.",
+    )
+
+    # Quick Metrics Ribbon
+    col_u1, col_u2, col_u3, col_u4 = st.columns(4)
+    with col_u1:
+        st.markdown(
+            f"""
+            <div class="naturalist-metric">
+                <div class="metric-val">{gamification.total_observations}</div>
+                <div class="metric-label">My Observations</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_u2:
+        st.markdown(
+            f"""
+            <div class="naturalist-metric">
+                <div class="metric-val">{gamification.species_collected}</div>
+                <div class="metric-label">Taxa in My Dex</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_u3:
+        st.markdown(
+            f"""
+            <div class="naturalist-metric">
+                <div class="metric-val">{gamification.families_count}</div>
+                <div class="metric-label">Families Documented</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_u4:
+        st.markdown(
+            f"""
+            <div class="naturalist-metric">
+                <div class="metric-val">{gamification.badges_unlocked_count}</div>
+                <div class="metric-label">Badges Unlocked</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height: 1.2rem;'></div>", unsafe_allow_html=True)
+
+    # Quests & Habits Showcase (Habitica-inspired)
+    st.markdown("### Active Field Habits & Expedition Quests")
+    user_quests = quest_service.get_user_quests(current_user.id)
+
+    col_q1, col_q2 = st.columns([1, 1], gap="medium")
+    for i, q in enumerate(user_quests[:4]):
+        target_col = col_q1 if i % 2 == 0 else col_q2
+        with target_col:
+            pct = min(100, int((q.current_progress / max(1, q.target_count)) * 100))
+            type_class = (
+                "quest-habit" if q.quest_type == "HABIT"
+                else "quest-recurring" if q.quest_type == "RECURRING_GOAL"
+                else "quest-milestone"
+            )
+            type_label = (
+                "Field Habit" if q.quest_type == "HABIT"
+                else "Weekly Goal" if q.quest_type == "RECURRING_GOAL"
+                else "Milestone Quest"
+            )
+
+            st.markdown(
+                f"""
+                <div class="quest-box {type_class}">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <div style="font-weight: 700; color: #183B32; font-size: 0.98rem;">{q.icon} {escape_text(q.title)}</div>
+                        <span style="font-size: 0.72rem; font-weight: 700; color: #8C5432; background: #FAF5EB; padding: 2px 7px; border-radius: 10px; border: 1px solid #EADBBE;">{type_label} &bull; +{q.xp_reward} XP</span>
                     </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.caption("Record your first organism observation to unlock the First Encounter badge.")
+                    <div style="font-size: 0.84rem; color: #4E5C53; margin: 4px 0 8px 0;">{escape_text(q.description)}</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.76rem; color: #183B32; font-weight: 600; margin-bottom: 3px;">
+                        <span>Progress: {q.current_progress} / {q.target_count}</span>
+                        <span>{pct}%</span>
+                    </div>
+                    <div style="background: #E8E3D8; border-radius: 4px; height: 6px; overflow: hidden;">
+                        <div style="background: #183B32; width: {pct}%; height: 100%;"></div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            if q.is_completed and not q.claimed_at:
+                if st.button(f"Claim +{q.xp_reward} XP: {q.title}", key=f"claim_home_{q.quest_id}"):
+                    ok, xp_val, msg = quest_service.claim_quest_reward(current_user.id, q.quest_id)
+                    if ok:
+                        st.success(msg)
+                        st.rerun()
+
+    # Recent Field Encounters
+    st.markdown("### Recent Field Encounters")
+    encounters = collection_service.list_user_observations(current_user.id, limit=3)
+    if not encounters:
+        st.info("No field encounters recorded yet. Start by identifying an organism with AI vision.")
+    else:
+        for obs in encounters:
+            st.markdown(
+                f"""
+                <div class="specimen-card">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span class="latin-binomial" style="font-size: 1.15rem;">{escape_text(obs.candidate_scientific_name)}</span>
+                        <span class="status-pill-accepted">{escape_text(obs.moderation_status)}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #4E5C53; margin-top: 4px;">
+                        Observed on {escape_text(obs.observation_timestamp[:10])} &bull; {escape_text(obs.coarse_location or "Field Location")}
+                    </div>
+                    <div style="font-size: 0.85rem; color: #1E2621; margin-top: 6px; font-style: italic;">
+                        "{escape_text(obs.field_notes or "No notes entered.")}"
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )

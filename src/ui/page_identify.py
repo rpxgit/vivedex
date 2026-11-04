@@ -228,6 +228,22 @@ def render_identify_page(
             if st.session_state.get("obs_saved_flag"):
                 st.success("✅ Observation has been saved to your Field Journal and added to My Dex!")
             else:
+                from src.database import Database
+                from src.ecological_service import EcologicalService
+                from src.quest_service import QuestService
+
+                db: Database = st.session_state.get("db")
+                eco_service = EcologicalService(db)
+                quest_service = QuestService(db)
+
+                sites_all = eco_service.list_field_sites()
+                site_options = {s.name: s.id for s in sites_all}
+                site_options["(No Linked Field Site)"] = None
+
+                exp_all = eco_service.list_expeditions()
+                exp_options = {e.title: e.id for e in exp_all}
+                exp_options["(Independent Field Observation)"] = None
+
                 with st.form("save_obs_workflow_form"):
                     notes_input = st.text_area(
                         "Step 9: Naturalist Field Notes (habitat, vegetation, behavior):",
@@ -237,6 +253,12 @@ def render_identify_page(
                         "Coarse Locality (City, Region, or Nature Reserve — never exact GPS):",
                         placeholder="e.g. Sherwood Forest, Nottinghamshire, UK",
                     )
+                    col_fs1, col_fs2 = st.columns(2)
+                    with col_fs1:
+                        sel_site_name = st.selectbox("Link to Monitored Field Site (Restor.eco):", list(site_options.keys()))
+                    with col_fs2:
+                        sel_exp_name = st.selectbox("Link to Scientific Expedition:", list(exp_options.keys()))
+
                     submit_obs = st.form_submit_button("📓 Record Field Observation to Journal", type="primary")
 
                     if submit_obs:
@@ -259,8 +281,21 @@ def render_identify_page(
                             coarse_location=location_input,
                             provenance="DEMO DATA" if is_fixture else "LIVE_ANALYSIS",
                         )
+
+                        sel_site_id = site_options.get(sel_site_name)
+                        sel_exp_id = exp_options.get(sel_exp_name)
+                        if sel_site_id or sel_exp_id:
+                            eco_service.link_observation_ecological(
+                                observation_id=obs_rec.observation_id,
+                                site_id=sel_site_id,
+                                expedition_id=sel_exp_id,
+                            )
+
+                        # Evaluate user quests and habits
+                        quest_service.evaluate_user_quests(current_user.id)
+
                         st.session_state["obs_saved_flag"] = True
-                        st.success(f"Observation recorded in Journal! ID: `{obs_rec.observation_id}` (+XP and badge evaluation completed)")
+                        st.success(f"Observation recorded in Journal! ID: `{obs_rec.observation_id}` (+XP, badge, and quest progress updated)")
                         st.rerun()
         else:
             st.info("Log in or register via the sidebar to record this observation to your personal journal and earn naturalist XP.")

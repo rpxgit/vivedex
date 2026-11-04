@@ -66,7 +66,7 @@ def render_breadcrumbs(crumbs: list[tuple[str, str | None]]) -> None:
         safe_label = escape_text(label)
         if target:
             html_parts.append(
-                f'<span style="color: #718568; font-weight: 500;">{safe_label}</span>'
+                f'<span style="color: #516C4D; font-weight: 500;">{safe_label}</span>'
             )
         else:
             html_parts.append(
@@ -74,7 +74,7 @@ def render_breadcrumbs(crumbs: list[tuple[str, str | None]]) -> None:
             )
     crumbs_html = " &nbsp;›&nbsp; ".join(html_parts)
     st.markdown(
-        f'<div style="font-size: 0.85rem; margin-bottom: 1.1rem; padding: 6px 0; border-bottom: 1px solid #e8e3d8;">{crumbs_html}</div>',
+        f'<div style="font-size: 0.85rem; margin-bottom: 1.1rem; padding: 6px 0; border-bottom: 1px solid #D8D1C2;">{crumbs_html}</div>',
         unsafe_allow_html=True,
     )
 
@@ -91,19 +91,19 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
     current_user: AuthenticatedUser | None = st.session_state.get("current_user")
     demo_active = is_demo_mode()
     env_badge = (
-        '<span style="font-size: 0.72rem; background: #FEF7E0; color: #B06000; padding: 2px 6px; border-radius: 4px; font-weight: 700;">DEV / DEMO</span>'
+        '<span style="font-size: 0.72rem; background: #FEF7E0; color: #8C5400; padding: 2px 7px; border-radius: 4px; font-weight: 700; border: 1px solid #FEEFC3;">DEV / DEMO</span>'
         if demo_active
-        else '<span style="font-size: 0.72rem; background: #E6F4EA; color: #137333; padding: 2px 6px; border-radius: 4px; font-weight: 700;">PRODUCTION</span>'
+        else '<span style="font-size: 0.72rem; background: #E6F4EA; color: #137333; padding: 2px 7px; border-radius: 4px; font-weight: 700; border: 1px solid #CEEAD6;">PRODUCTION</span>'
     )
 
     st.sidebar.markdown(
         f"""
-        <div style="padding-bottom: 12px; border-bottom: 1px solid #e3ddd0; margin-bottom: 14px;">
+        <div style="padding-bottom: 12px; border-bottom: 1px solid #D8D1C2; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #183B32;">🌿 Vivédex</div>
+                <div style="font-family: 'Cinzel', serif; font-size: 1.45rem; font-weight: 700; color: #183B32;">🌿 Vivédex</div>
                 <div>{env_badge}</div>
             </div>
-            <div style="font-size: 0.78rem; color: #777E73; text-transform: uppercase; letter-spacing: 0.04em;">Biodiversity Discovery Platform</div>
+            <div style="font-size: 0.76rem; color: #4E5C53; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-top: 2px;">Biodiversity Platform</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -122,11 +122,11 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
 
         st.sidebar.markdown(
             f"""
-            <div style="background: #ffffff; border: 1px solid #ded6c5; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
-                <div style="font-size: 0.75rem; text-transform: uppercase; color: #777E73; font-weight: 700;">Field Naturalist</div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #183B32;">{safe_display_name}</div>
-                <div style="font-size: 0.8rem; color: #A66B48; font-weight: 600;">Level {stats.level} {escape_text(rank_title)} ({stats.total_xp} XP)</div>
-                <div style="font-size: 0.75rem; color: #666; font-family: monospace; margin-top: 4px;">ID: {safe_vivedex_id} &bull; {safe_role}</div>
+            <div style="background: #FFFFFF; border: 1px solid #D8D1C2; border-radius: 8px; padding: 12px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                <div style="font-size: 0.74rem; text-transform: uppercase; color: #4E5C53; font-weight: 700;">Field Naturalist</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #183B32; margin-top: 2px;">{safe_display_name}</div>
+                <div style="font-size: 0.82rem; color: #8C5432; font-weight: 600; margin-top: 2px;">Level {stats.level} &bull; {escape_text(rank_title)} ({stats.total_xp} XP)</div>
+                <div style="font-size: 0.74rem; color: #4E5C53; font-family: monospace; margin-top: 4px;">ID: {safe_vivedex_id} &bull; {safe_role}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -140,13 +140,16 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
             st.sidebar.success("Logged out successfully.")
             st.rerun()
     else:
-        st.sidebar.markdown("#### Naturalist Access")
+        st.sidebar.markdown(
+            '<div style="font-size: 0.82rem; text-transform: uppercase; color: #183B32; font-weight: 700; margin-bottom: 8px;">Naturalist Access</div>',
+            unsafe_allow_html=True,
+        )
         tab_login, tab_register = st.sidebar.tabs(["Log In", "Register"])
 
         with tab_login:
-            with st.form("login_form"):
-                login_user = st.text_input("Username", key="login_username")
-                login_pwd = st.text_input("Password", type="password", key="login_pwd")
+            with st.form("login_form_sidebar"):
+                login_user = st.text_input("Username", key="login_username_sidebar")
+                login_pwd = st.text_input("Password", type="password", key="login_pwd_sidebar")
                 login_submit = st.form_submit_button("Log In", width="stretch")
 
                 if login_submit:
@@ -161,11 +164,11 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
                         st.error(str(e))
 
         with tab_register:
-            with st.form("register_form"):
-                reg_user = st.text_input("Username", key="reg_username")
-                reg_name = st.text_input("Display Name", key="reg_name")
+            with st.form("register_form_sidebar"):
+                reg_user = st.text_input("Username", key="reg_username_sidebar")
+                reg_name = st.text_input("Display Name", key="reg_name_sidebar")
                 reg_pwd = st.text_input(
-                    "Password (min 8 chars)", type="password", key="reg_pwd"
+                    "Password (min 8 chars)", type="password", key="reg_pwd_sidebar"
                 )
                 reg_submit = st.form_submit_button("Create Account", width="stretch")
 
@@ -196,7 +199,7 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
         if demo_accounts:
             st.sidebar.markdown("---")
             st.sidebar.markdown(
-                '<div style="font-size: 0.75rem; text-transform: uppercase; color: #777E73; font-weight: 700; margin-bottom: 6px;">⚡ Quick Demo Accounts</div>',
+                '<div style="font-size: 0.74rem; text-transform: uppercase; color: #4E5C53; font-weight: 700; margin-bottom: 6px;">⚡ Quick Demo Accounts</div>',
                 unsafe_allow_html=True,
             )
             for d_user in demo_accounts:

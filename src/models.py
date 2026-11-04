@@ -74,6 +74,9 @@ class ObservationRecord:
     moderation_status: str
     provenance: str
     created_at: str
+    site_id: int | None = None
+    expedition_id: int | None = None
+    project_id: int | None = None
 
 
 @dataclass(frozen=True)

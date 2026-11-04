@@ -85,6 +85,10 @@ def render_journal_page(collection_service: CollectionService) -> None:
                 st.write(f"**Candidate Taxon:** <span class='latin-binomial'>*{esc_sci_name}*</span>", unsafe_allow_html=True)
                 st.write(f"**Taxon ID Key:** `{obs.matched_taxon_id or 'Unmatched'}`")
                 st.write(f"**Taxonomic Resolution:** `{obs.taxonomic_resolution or 'None'}`")
+                if obs.site_id:
+                    st.write(f"**Monitored Field Site:** 📍 Site #{obs.site_id}")
+                if obs.expedition_id:
+                    st.write(f"**Linked Expedition:** 🧭 Expedition #{obs.expedition_id}")
             with c_meta2:
                 st.write(f"**Observed Timestamp:** {obs.observation_timestamp}")
                 esc_mod_status = escape_text(obs.moderation_status)

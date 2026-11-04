@@ -520,7 +520,8 @@ class CollectionService:
                 SELECT id, observation_id, owner_id, candidate_scientific_name,
                        matched_taxon_id, observation_timestamp, field_notes,
                        coarse_location, model_result_json, gbif_result_json,
-                       taxonomic_resolution, moderation_status, provenance, created_at
+                       taxonomic_resolution, moderation_status, provenance, created_at,
+                       site_id, expedition_id, project_id
                 FROM observations
                 WHERE observation_id = ?;
                 """,
@@ -545,6 +546,9 @@ class CollectionService:
                 moderation_status=row["moderation_status"],
                 provenance=row["provenance"],
                 created_at=row["created_at"],
+                site_id=row["site_id"] if "site_id" in row.keys() else None,
+                expedition_id=row["expedition_id"] if "expedition_id" in row.keys() else None,
+                project_id=row["project_id"] if "project_id" in row.keys() else None,
             )
 
     def get_user_observations(
@@ -559,7 +563,8 @@ class CollectionService:
                 SELECT id, observation_id, owner_id, candidate_scientific_name,
                        matched_taxon_id, observation_timestamp, field_notes,
                        coarse_location, model_result_json, gbif_result_json,
-                       taxonomic_resolution, moderation_status, provenance, created_at
+                       taxonomic_resolution, moderation_status, provenance, created_at,
+                       site_id, expedition_id, project_id
                 FROM observations
                 WHERE owner_id = ?
             """
@@ -587,6 +592,9 @@ class CollectionService:
                     moderation_status=row["moderation_status"],
                     provenance=row["provenance"],
                     created_at=row["created_at"],
+                    site_id=row["site_id"] if "site_id" in row.keys() else None,
+                    expedition_id=row["expedition_id"] if "expedition_id" in row.keys() else None,
+                    project_id=row["project_id"] if "project_id" in row.keys() else None,
                 )
                 for row in cursor.fetchall()
             ]
