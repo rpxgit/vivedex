@@ -1,7 +1,7 @@
-"""Explore Dex page for querying and browsing taxonomic records via the GBIF API.
+"""Explore Dex view: The visual centre of the Vivédex biodiversity catalog.
 
-Provides search by scientific or vernacular name, rank filtering, species cards,
-hierarchy exploration, and personal collection integration.
+Provides visual specimen cards, 10 biological category filters, GBIF live search,
+curated specimen galleries, and deep links to detailed species pages.
 """
 
 from __future__ import annotations
@@ -10,14 +10,33 @@ import streamlit as st
 
 from src.auth import AuthenticatedUser
 from src.collection_service import CollectionService
+from src.database import Database
 from src.gbif_adapter import GBIFAdapter, GBIFRequestError
+from src.knowledge_graph import KnowledgeGraphService
 from src.schemas import GBIFMatchResult
 from src.ui.common import inject_custom_styles, render_security_notice
+from src.ui.page_species_detail import CURATED_SPECIMEN_ASSETS, render_species_detail_page
+from src.ui.theme import render_hero_banner
+
+# 10 Biological Browsing Categories
+TAXONOMIC_CATEGORIES = [
+    ("ALL", "All Organisms", "🌐"),
+    ("Aves", "Birds", "🦅"),
+    ("Mammalia", "Mammals", "🦊"),
+    ("Reptilia", "Reptiles", "🦎"),
+    ("Amphibia", "Amphibians", "🐸"),
+    ("Actinopterygii", "Fish", "🐟"),
+    ("Insecta", "Insects", "🦋"),
+    ("Arachnida", "Arachnids", "🕷️"),
+    ("Plantae", "Plants", "🌿"),
+    ("Fungi", "Fungi", "🍄"),
+    ("Other", "Other Organisms", "🌊"),
+]
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
-def cached_gbif_lookup(name: str) -> dict | None:
-    """Fetch GBIF species match with local caching to conserve network requests."""
+def cached_gbif_match(name: str) -> dict | None:
+    """Fetch and cache live GBIF species reconciliation results."""
     adapter = GBIFAdapter()
     try:
         res = adapter.match_species(name)
@@ -28,116 +47,191 @@ def cached_gbif_lookup(name: str) -> dict | None:
         return None
 
 
-def render_explore_page(collection_service: CollectionService) -> None:
-    """Render the Explore Dex search and taxonomy browser view."""
+def render_explore_page(
+    db: Database,
+    collection_service: CollectionService,
+    kg_service: KnowledgeGraphService,
+) -> None:
+    """Render the reconstructed Explore Dex visual specimen catalog."""
     inject_custom_styles()
     render_security_notice()
 
     current_user: AuthenticatedUser | None = st.session_state.get("current_user")
 
-    st.markdown('<div class="main-header">🔍 Explore Dex</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="sub-header">Search authoritative biodiversity records via the GBIF Backbone Taxonomy.</div>',
-        unsafe_allow_html=True,
+    # If a specific taxon is selected for deep inspection, route to detail view
+    selected_id = st.session_state.get("selected_taxon_id")
+    if selected_id:
+        render_species_detail_page(db, collection_service, kg_service, selected_id)
+        return
+
+    # Banner
+    render_hero_banner(
+        title="🔍 Explore Dex",
+        subtitle="Browse authoritative biological specimens, filter across taxonomic kingdoms and classes, and inspect authoritative GBIF Backbone records.",
     )
 
-    col_q, col_rank = st.columns([3, 1])
-    with col_q:
+    # Search & Category Filters
+    col_search, col_rank = st.columns([3, 1])
+    with col_search:
         search_query = st.text_input(
-            "Search Organism Name (Scientific or Vernacular):",
-            placeholder="e.g. Passer domesticus, Erannis defoliaria, Monarch butterfly, Quercus robur",
-            key="explore_search_input",
+            "Search Organism Name:",
+            placeholder="Search binomial (e.g. Passer domesticus, Quercus) or common name...",
+            key="explore_dex_search",
         )
     with col_rank:
         rank_filter = st.selectbox(
             "Filter Rank:",
             ["ALL", "SPECIES", "GENUS", "FAMILY", "ORDER", "CLASS"],
-            key="explore_rank_filter",
+            key="explore_dex_rank",
         )
 
-    search_button = st.button("Search Taxonomy", type="primary")
+    # 10 Browsing Categories as Horizontal Tabs/Pills
+    category_labels = [f"{icon} {label}" for _, label, icon in TAXONOMIC_CATEGORIES]
+    selected_cat_idx = st.radio(
+        "Taxonomic Group Filter:",
+        options=range(len(TAXONOMIC_CATEGORIES)),
+        format_func=lambda i: category_labels[i],
+        horizontal=True,
+        key="explore_dex_cat_radio",
+    )
+    selected_cat_key = TAXONOMIC_CATEGORIES[selected_cat_idx][0]
 
-    if search_query.strip() and (search_button or search_query != st.session_state.get("_prev_query")):
-        st.session_state["_prev_query"] = search_query.strip()
-        with st.spinner(f"Reconciling '{search_query.strip()}' against GBIF Backbone Taxonomy..."):
-            data = cached_gbif_lookup(search_query.strip())
-
-        if not data:
-            st.error(f"Network error or no response received from GBIF for '{search_query.strip()}'.")
-            return
-
-        gbif_res = GBIFMatchResult(**data)
-
-        # Apply rank filter if specified
-        if rank_filter != "ALL" and gbif_res.rank and gbif_res.rank.upper() != rank_filter:
-            st.warning(f"Result returned with rank '{gbif_res.rank}', which does not match filter '{rank_filter}'.")
-
-        # Species Detail Card
+    # Check for live search query
+    if search_query.strip():
         st.markdown("---")
-        st.subheader("Taxonomic Record")
+        st.subheader(f"Search Results for: *{search_query.strip()}*")
 
-        # Check match quality
-        is_exact = gbif_res.match_type == "EXACT"
-        if gbif_res.match_type == "HIGHERRANK":
-            st.warning("⚠️ **Higher-Rank Match:** GBIF could not find a species-level match; resolved to a higher taxonomic rank.")
-        elif gbif_res.match_type == "FUZZY":
-            st.warning(f"⚠️ **Fuzzy Name Match:** Reconciled via approximate matching (confidence score: {gbif_res.gbif_match_score}/100). Not an exact species match.")
-        elif gbif_res.match_type == "NONE":
-            st.error(f"❌ No matching taxon found in the GBIF Backbone Taxonomy for '{search_query.strip()}'.")
-            return
+        with st.spinner(f"Reconciling '{search_query.strip()}' against GBIF Backbone Taxonomy..."):
+            raw_match = cached_gbif_match(search_query.strip())
 
-        col_meta1, col_meta2 = st.columns([2, 1])
-        with col_meta1:
-            st.markdown(f"### {gbif_res.matched_scientific_name or gbif_res.query_name}")
-            if gbif_res.canonical_name:
-                st.caption(f"Canonical Binomial: *{gbif_res.canonical_name}*")
+        if not raw_match:
+            st.error(f"No response or network failure querying GBIF for '{search_query.strip()}'.")
+        else:
+            gbif_res = GBIFMatchResult(**raw_match)
+            if gbif_res.match_type == "NONE":
+                st.warning(f"❌ No matching taxon found in the GBIF Backbone Taxonomy for '{search_query.strip()}'.")
+            else:
+                # Upsert taxon so it can be viewed in detail
+                taxon_id = collection_service.upsert_taxon_from_gbif(gbif_res)
+
+                # Render result card
+                is_exact = gbif_res.match_type == "EXACT"
+                st.markdown(
+                    f"""
+                    <div class="specimen-card" style="border-left: 5px solid {'#183B32' if is_exact else '#A66B48'};">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+                            <div>
+                                <span class="rank-pill">{gbif_res.rank or 'TAXON'}</span>
+                                <h3 style="margin: 4px 0 2px 0;">{gbif_res.matched_scientific_name or gbif_res.query_name}</h3>
+                                <div style="font-size: 0.85rem; color: #555;">Family: {gbif_res.hierarchy.get('family', 'Unassigned') if gbif_res.hierarchy else 'N/A'}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="status-pill-{ 'accepted' if is_exact else 'pending' }">
+                                    {gbif_res.match_type} MATCH ({gbif_res.gbif_match_score or 'N/A'}/100)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                col_b1, col_b2 = st.columns([1, 1])
+                with col_b1:
+                    if st.button("🔬 Inspect Deep Specimen Page", key=f"inspect_search_{taxon_id}", type="primary"):
+                        st.session_state["selected_taxon_id"] = taxon_id
+                        st.rerun()
+                with col_b2:
+                    if current_user is not None:
+                        if st.button("📚 Save to My Dex", key=f"save_search_{taxon_id}"):
+                            collection_service.save_to_collection(current_user.id, taxon_id)
+                            st.success("Saved to your personal Dex!")
+                            st.rerun()
+
+    # Specimen Gallery from Database
+    st.markdown("---")
+    st.subheader("📚 Curated Specimen Catalog")
+
+    # Fetch stored taxa from database
+    with db.connect() as conn:
+        cursor = conn.cursor()
+        sql = """
+            SELECT taxon_id, scientific_name, canonical_name, common_name,
+                   rank, family, kingdom, class_name, data_provider
+            FROM taxa
+            WHERE taxon_id IS NOT NULL AND scientific_name IS NOT NULL
+        """
+        params = []
+        if selected_cat_key != "ALL":
+            if selected_cat_key in ["Aves", "Mammalia", "Reptilia", "Amphibia", "Actinopterygii", "Insecta", "Arachnida"]:
+                sql += " AND class_name = ?"
+                params.append(selected_cat_key)
+            elif selected_cat_key in ["Plantae", "Fungi"]:
+                sql += " AND kingdom = ?"
+                params.append(selected_cat_key)
+
+        if rank_filter != "ALL":
+            sql += " AND rank = ?"
+            params.append(rank_filter)
+
+        sql += " ORDER BY scientific_name ASC;"
+        cursor.execute(sql, params)
+        db_taxa = cursor.fetchall()
+
+    if not db_taxa:
+        st.info("No specimens recorded in this category yet. Use search above or load the sample demo dataset to explore curated taxa.")
+        return
+
+    # Check user collection state
+    user_collected_ids = set()
+    if current_user is not None:
+        with db.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT taxon_id FROM collections WHERE user_id = ?;", (current_user.id,))
+            user_collected_ids = {r[0] for r in cursor.fetchall()}
+
+    # Render Specimen Grid (2 Columns)
+    cols = st.columns(2)
+    for idx, t in enumerate(db_taxa):
+        t_id = t["taxon_id"]
+        in_user_dex = t_id in user_collected_ids
+        asset = CURATED_SPECIMEN_ASSETS.get(t_id, {})
+        img_thumb = asset.get("image_url")
+
+        with cols[idx % 2]:
             st.markdown(
                 f"""
-                - **Taxonomic Rank:** <span class="taxon-rank-pill">{gbif_res.rank or 'Unknown'}</span>
-                - **Taxonomic Status:** <span class="status-pill">{gbif_res.status or 'Unknown'}</span>
-                - **Match Type:** `{gbif_res.match_type}` (Score: {gbif_res.gbif_match_score or 'N/A'}/100)
-                - **GBIF Taxon Key:** `{gbif_res.usage_key or 'None'}`
+                <div class="specimen-card" style="min-height: 200px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span class="rank-pill">{t['rank'] or 'SPECIES'}</span>
+                        <span class="{'dex-collected-tag' if in_user_dex else 'status-pill-pending'}" style="font-size: 0.72rem;">
+                            {'✅ IN MY DEX' if in_user_dex else '⚪ NOT RECORDED'}
+                        </span>
+                    </div>
+                    <div style="font-family: 'Cinzel', serif; font-size: 1.25rem; font-weight: 700; color: #183B32;">
+                        {t['common_name'] or t['scientific_name']}
+                    </div>
+                    <div class="latin-binomial" style="font-size: 0.95rem; margin-bottom: 6px;">
+                        *{t['scientific_name']}*
+                    </div>
+                    <div style="font-size: 0.8rem; color: #777E73; margin-bottom: 12px;">
+                        Family: <strong>{t['family'] or 'Biota'}</strong> &bull; Kingdom: {t['kingdom'] or 'Biota'}
+                    </div>
+                </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-        with col_meta2:
-            st.markdown("#### Classification")
-            hierarchy = gbif_res.hierarchy or {}
-            for rank_level in ["kingdom", "phylum", "class", "order", "family", "genus", "species"]:
-                val = hierarchy.get(rank_level)
-                if val:
-                    st.text(f"{rank_level.capitalize()}: {val}")
-
-        # Provenance and Licence
-        st.markdown(
-            f"""
-            <div class="provenance-tag">
-                Provider: {gbif_res.provider} | Dataset: {gbif_res.dataset}<br/>
-                Licence: {gbif_res.licence} | Attribution: {gbif_res.attribution}<br/>
-                Retrieved: {gbif_res.retrieved_at}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        if gbif_res.source_url:
-            st.markdown(f"[🌐 View Official GBIF Taxon Page]({gbif_res.source_url})")
-
-        # Action: Save to My Collection
-        st.markdown("---")
-        if current_user is not None:
-            col_act1, col_act2 = st.columns([1, 2])
-            with col_act1:
-                col_notes = st.text_input("Encounter Notes (optional):", key="explore_enc_notes")
-                if st.button("📚 Save to My Collection", type="primary", key="explore_save_btn"):
-                    taxon_id = collection_service.upsert_taxon_from_gbif(gbif_res)
-                    item = collection_service.save_to_collection(
-                        user_id=current_user.id,
-                        taxon_id=taxon_id,
-                        notes=col_notes,
-                    )
-                    st.success(f"Saved to your collection! (Total encounters: {item.encounter_count})")
-        else:
-            st.info("Log in or register via the sidebar to save this taxon to your personal collection!")
-
+            col_btn1, col_btn2 = st.columns([1, 1])
+            with col_btn1:
+                if st.button("🔬 Inspect Specimen", key=f"grid_insp_{t_id}_{idx}", width="stretch"):
+                    st.session_state["selected_taxon_id"] = t_id
+                    st.rerun()
+            with col_btn2:
+                if current_user is not None and not in_user_dex:
+                    if st.button("📚 Add to Dex", key=f"grid_add_{t_id}_{idx}", width="stretch"):
+                        collection_service.save_to_collection(current_user.id, t_id)
+                        st.success("Added to Dex!")
+                        st.rerun()
+                elif in_user_dex:
+                    st.caption("Already in Dex")

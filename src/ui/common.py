@@ -1,6 +1,6 @@
-"""Shared layout components, navigation helpers, and authentication controls for Vivédex.
+"""Shared layout components, navigation breadcrumbs, and authentication drawer for Vivédex.
 
-Applies a cohesive nature-inspired theme and displays security prototype notices.
+Integrates centralized design tokens and provides seamless account access.
 """
 
 from __future__ import annotations
@@ -10,109 +10,81 @@ import streamlit as st
 from src.auth import AuthenticatedUser, AuthenticationError, AuthService
 from src.database import Database
 from src.demo_data import load_demo_dataset
-
-LOCAL_PROTOTYPE_NOTICE = (
-    "LOCAL PROTOTYPE — AUTHENTICATION IS NOT PRODUCTION-HARDENED."
-)
+from src.ui.theme import get_naturalist_rank, inject_theme_styles, render_security_badge
 
 
 def inject_custom_styles() -> None:
-    """Inject nature-inspired styling consistent across all platform pages."""
-    st.markdown(
-        """
-        <style>
-        /* Nature-inspired palette */
-        :root {
-            --primary-green: #2d6a4f;
-            --soft-green: #d8f3dc;
-            --forest-dark: #1b4332;
-            --earth-slate: #2b2d42;
-            --accent-gold: #e9c46a;
-        }
-        .main-header {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #1b4332;
-            margin-bottom: 0.2rem;
-        }
-        .sub-header {
-            font-size: 1.05rem;
-            color: #555555;
-            margin-bottom: 1.2rem;
-        }
-        .security-badge {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 0.35rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            border-left: 4px solid #ffeeba;
-            margin-bottom: 1rem;
-        }
-        .card-box {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-        }
-        .taxon-rank-pill {
-            display: inline-block;
-            background-color: #d8f3dc;
-            color: #1b4332;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 12px;
-            text-transform: uppercase;
-        }
-        .status-pill {
-            display: inline-block;
-            background-color: #e2eafc;
-            color: #1d3557;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 12px;
-        }
-        .provenance-tag {
-            font-size: 0.72rem;
-            color: #6c757d;
-            font-family: monospace;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Wrapper calling the centralized theme style injector."""
+    inject_theme_styles()
 
 
 def render_security_notice() -> None:
-    """Render the mandatory local prototype security banner."""
+    """Render the standard security notice."""
+    render_security_badge()
+
+
+def render_breadcrumbs(crumbs: list[tuple[str, str | None]]) -> None:
+    """Render clean, museum-grade breadcrumbs for deep navigation.
+
+    Each crumb is a tuple of (label, optional_url_target).
+    """
+    html_parts = []
+    for label, target in crumbs:
+        if target:
+            html_parts.append(
+                f'<span style="color: #718568; font-weight: 500;">{label}</span>'
+            )
+        else:
+            html_parts.append(
+                f'<span style="color: #183B32; font-weight: 700;">{label}</span>'
+            )
+    crumbs_html = " &nbsp;›&nbsp; ".join(html_parts)
     st.markdown(
-        f'<div class="security-badge">⚠️ {LOCAL_PROTOTYPE_NOTICE}</div>',
+        f'<div style="font-size: 0.85rem; margin-bottom: 1.1rem; padding: 6px 0; border-bottom: 1px solid #e8e3d8;">{crumbs_html}</div>',
         unsafe_allow_html=True,
     )
 
 
 def render_auth_controls(auth_service: AuthService, db: Database) -> None:
-    """Render authentication and user account controls in the Streamlit sidebar."""
+    """Render the authentication and researcher profile panel in the sidebar."""
     current_user: AuthenticatedUser | None = st.session_state.get("current_user")
 
-    st.sidebar.markdown("### 🌿 Vivédex")
-    st.sidebar.caption("Biodiversity Discovery & Collection")
+    st.sidebar.markdown(
+        """
+        <div style="padding-bottom: 12px; border-bottom: 1px solid #e3ddd0; margin-bottom: 14px;">
+            <div style="font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #183B32;">🌿 Vivédex</div>
+            <div style="font-size: 0.78rem; color: #777E73; text-transform: uppercase; letter-spacing: 0.04em;">Biodiversity Discovery Platform</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if current_user is not None:
-        st.sidebar.markdown(f"**Researcher:** {current_user.display_name}")
-        st.sidebar.caption(f"ID: `{current_user.vivedex_id}` | Role: `{current_user.role.upper()}`")
+        # Determine player rank
+        from src.achievements import AchievementService
+        ach_service = AchievementService(db)
+        stats = ach_service.get_user_gamification_stats(current_user.id)
+        rank_title = get_naturalist_rank(stats.level)
 
-        if st.sidebar.button("🚪 Log Out", width="stretch"):
+        st.sidebar.markdown(
+            f"""
+            <div style="background: #ffffff; border: 1px solid #ded6c5; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: #777E73; font-weight: 700;">Field Naturalist</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #183B32;">{current_user.display_name}</div>
+                <div style="font-size: 0.8rem; color: #A66B48; font-weight: 600;">Level {stats.level} {rank_title} ({stats.total_xp} XP)</div>
+                <div style="font-size: 0.75rem; color: #666; font-family: monospace; margin-top: 4px;">ID: {current_user.vivedex_id} &bull; {current_user.role.upper()}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        if st.sidebar.button("🚪 Log Out", width="stretch", key="auth_logout_btn"):
             st.session_state["current_user"] = None
+            st.session_state["active_user_id"] = None
             st.sidebar.success("Logged out successfully.")
             st.rerun()
     else:
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("#### Account Access")
+        st.sidebar.markdown("#### Naturalist Access")
         tab_login, tab_register = st.sidebar.tabs(["Log In", "Register"])
 
         with tab_login:
@@ -126,17 +98,17 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
                         user = auth_service.authenticate_user(login_user, login_pwd)
                         st.session_state["current_user"] = user
                         st.session_state["active_user_id"] = user.id
-                        st.success(f"Welcome back, {user.display_name}!")
+                        st.success(f"Welcome, {user.display_name}!")
                         st.rerun()
                     except AuthenticationError as e:
                         st.error(str(e))
 
         with tab_register:
             with st.form("register_form"):
-                reg_user = st.text_input("New Username", key="reg_username")
+                reg_user = st.text_input("Username", key="reg_username")
                 reg_name = st.text_input("Display Name", key="reg_name")
                 reg_pwd = st.text_input("Password (min 8 chars)", type="password", key="reg_pwd")
-                reg_submit = st.form_submit_button("Register", width="stretch")
+                reg_submit = st.form_submit_button("Create Account", width="stretch")
 
                 if reg_submit:
                     try:
@@ -147,43 +119,47 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
                         )
                         st.session_state["current_user"] = user
                         st.session_state["active_user_id"] = user.id
-                        st.success(f"Account created! Role: {user.role.upper()}")
+                        st.success(f"Account registered! Role: {user.role.upper()}")
                         st.rerun()
                     except AuthenticationError as e:
                         st.error(str(e))
 
-        # Quick Demo Account login if demo accounts exist
-        with db.connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, username, role FROM users WHERE username IN ('demo_admin', 'demo_naturalist') ORDER BY role ASC;")
-            demo_accounts = cursor.fetchall()
+    # Quick Demo Account Switch
+    with db.connect() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, username, role FROM users WHERE username IN ('demo_admin', 'demo_naturalist') ORDER BY role ASC;"
+        )
+        demo_accounts = cursor.fetchall()
 
-        if demo_accounts:
-            st.sidebar.markdown("---")
-            st.sidebar.markdown("#### ⚡ Quick Demo Switch")
-            for d_user in demo_accounts:
-                role_label = "Admin" if d_user["role"] == "admin" else "Naturalist"
-                if st.sidebar.button(
-                    f"👤 {d_user['username']} ({role_label})",
-                    width="stretch",
-                    key=f"quick_login_{d_user['id']}",
-                ):
-                    u = auth_service.get_user_by_id(d_user["id"])
-                    if u:
-                        st.session_state["current_user"] = u
-                        st.session_state["active_user_id"] = u.id
-                        st.rerun()
+    if demo_accounts:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown(
+            '<div style="font-size: 0.75rem; text-transform: uppercase; color: #777E73; font-weight: 700; margin-bottom: 6px;">⚡ Quick Demo Accounts</div>',
+            unsafe_allow_html=True,
+        )
+        for d_user in demo_accounts:
+            role_label = "Admin" if d_user["role"] == "admin" else "Naturalist"
+            if st.sidebar.button(
+                f"👤 {d_user['username']} ({role_label})",
+                width="stretch",
+                key=f"quick_login_{d_user['id']}",
+            ):
+                u = auth_service.get_user_by_id(d_user["id"])
+                if u:
+                    st.session_state["current_user"] = u
+                    st.session_state["active_user_id"] = u.id
+                    st.rerun()
 
-        # Check if database has users; if empty, offer one-click demo data load
-        with db.connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM users;")
-            count = cursor.fetchone()[0]
+    # Empty Database onboarding prompt
+    with db.connect() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users;")
+        user_count = cursor.fetchone()[0]
 
-        if count == 0:
-            st.sidebar.info("Database is empty. Register first user (Admin) or load sample data.")
-            if st.sidebar.button("📦 Load Sample Demo Data", width="stretch"):
-                res = load_demo_dataset(db)
-                st.sidebar.success("Demo data loaded. Admin & Naturalist ready.")
-                st.rerun()
-
+    if user_count == 0:
+        st.sidebar.info("Database is fresh. Load sample demo records to start exploring.")
+        if st.sidebar.button("📦 Load Sample Demo Data", width="stretch", key="init_demo_btn"):
+            load_demo_dataset(db)
+            st.sidebar.success("Demo dataset loaded!")
+            st.rerun()

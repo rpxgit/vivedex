@@ -1,7 +1,6 @@
-"""Administrator Console page for Vivédex.
+"""Administrator Console view: Platform oversight, user directory, moderation, and audit logs.
 
-Provides platform metrics, user directory, observation moderation workflows, and audit trail inspection.
-Enforces strict server-side role checks on all operations.
+Strictly guarded by server-side role authorization checks.
 """
 
 from __future__ import annotations
@@ -9,176 +8,229 @@ from __future__ import annotations
 import streamlit as st
 
 from src.admin_service import AdminService
-from src.auth import AuthenticatedUser, AuthorizationError
+from src.auth import AuthenticatedUser
 from src.database import Database
 from src.demo_data import load_demo_dataset
 from src.ui.common import inject_custom_styles, render_security_notice
+from src.ui.theme import render_hero_banner
 
-MODERATION_DISCLAIMER = (
-    "IMPORTANT: 'ACCEPTED_FOR_CATALOG' indicates that the submission passed platform moderation. "
-    "It DOES NOT mean that a taxonomic expert has confirmed the identification. "
-    "Do not represent administrative approval as scientific verification."
+MODERATION_SAFEGUARD = (
+    "MANDATORY SCIENTIFIC SAFEGUARD: 'ACCEPTED_FOR_CATALOG' signifies that the observation meets "
+    "platform submission guidelines and morphological plausibility. It DOES NOT signify verified "
+    "taxonomic confirmation by an authorized botanical or zoological authority."
 )
 
 
 def render_admin_page(db: Database, admin_service: AdminService) -> None:
-    """Render the administrator control panel view."""
+    """Render the reconstructed administrator control panel."""
     inject_custom_styles()
     render_security_notice()
 
     current_user: AuthenticatedUser | None = st.session_state.get("current_user")
 
-    # Strict server-side access control
+    # Strict server-side access check
     if current_user is None or not current_user.is_admin:
-        st.error("⛔ **Access Denied:** Administrator privileges are required to access this console.")
+        st.error("⛔ **Access Denied:** Administrator credentials are required to view this console.")
         return
 
-    st.markdown('<div class="main-header">🛡️ Administrator Console</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="sub-header">Platform management, user oversight, and observation moderation. Logged in as: <strong>{current_user.display_name}</strong></div>',
-        unsafe_allow_html=True,
+    # Banner
+    render_hero_banner(
+        title="🛡️ Administrator Oversight Console",
+        subtitle=f"Platform governance, observation moderation, user directory, and security audit log inspection. Active Admin: @{current_user.username}",
     )
 
-    tab_metrics, tab_users, tab_mod, tab_audit, tab_demo = st.tabs(
+    tab_overview, tab_mod, tab_users, tab_audit, tab_demo = st.tabs(
         [
-            "📊 Platform Metrics",
-            "👥 User Management",
-            "⚖️ Moderation Queue",
-            "📜 Audit Logs",
-            "📦 Demo Data",
+            "📊 Platform Overview",
+            "⚖️ Observation Moderation",
+            "👥 User Directory",
+            "📜 Audit History",
+            "📦 Demo Dataset Management",
         ]
     )
 
-    # TAB 1: Metrics
-    with tab_metrics:
+    # TAB 1: Platform Overview & Metrics
+    with tab_overview:
         metrics = admin_service.get_dashboard_metrics(current_user)
 
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.metric("Total Users", metrics.total_users)
-            st.metric("Total Observations", metrics.total_observations)
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{metrics.total_users}</div>
+                    <div class="metric-label">Registered Naturalists</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.write("")
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{metrics.total_observations}</div>
+                    <div class="metric-label">Total Field Sightings</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
         with c2:
-            st.metric("Distinct Taxa", metrics.distinct_taxa_count)
-            st.metric("Pending Moderation", metrics.pending_submissions)
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{metrics.distinct_taxa_count}</div>
+                    <div class="metric-label">Distinct Known Taxa</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.write("")
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val" style="color: #A66B48;">{metrics.pending_submissions}</div>
+                    <div class="metric-label">Submissions Pending Review</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
         with c3:
-            st.metric("Accepted for Catalog", metrics.accepted_submissions)
-            st.metric("Audit Trail Events", metrics.recent_activity_count)
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val" style="color: #137333;">{metrics.accepted_submissions}</div>
+                    <div class="metric-label">Catalog Accepted Submissions</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.write("")
+            st.markdown(
+                f"""
+                <div class="naturalist-metric">
+                    <div class="metric-val">{metrics.recent_activity_count}</div>
+                    <div class="metric-label">Logged Audit Events</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         st.markdown("---")
-        st.subheader("🎖️ Badge Distribution")
-        badge_data = [
-            {"Badge Name": k, "Awarded Count": v}
-            for k, v in metrics.badge_distribution.items()
+        st.subheader("🎖️ Milestone Badge Distribution")
+        badge_rows = [
+            {"Milestone Title": name, "Recipients": count}
+            for name, count in metrics.badge_distribution.items()
         ]
-        st.dataframe(badge_data, width=600)
+        st.dataframe(badge_rows, width=640)
 
-    # TAB 2: User Management
+    # TAB 2: Observation Moderation Queue
+    with tab_mod:
+        st.subheader("⚖️ Observation Review & Moderation Queue")
+        st.info(f"ℹ️ {MODERATION_SAFEGUARD}")
+
+        mod_status = st.selectbox(
+            "Filter Moderation Queue:",
+            ["PENDING", "ACCEPTED_FOR_CATALOG", "NEEDS_MORE_EVIDENCE", "REJECTED", "ALL"],
+            key="admin_mod_filter_select",
+        )
+
+        queue = admin_service.get_moderation_queue(current_user, mod_status)
+        st.write(f"Displaying **{len(queue)}** observations")
+
+        for obs in queue:
+            tag = f"[{obs.provenance}] " if obs.provenance == "DEMO DATA" else ""
+            with st.expander(f"{tag}{obs.candidate_scientific_name} ({obs.observation_id}) &bull; Current State: {obs.moderation_status}"):
+                c_m1, c_m2 = st.columns(2)
+                with c_m1:
+                    st.write(f"**Observation ID:** `{obs.observation_id}`")
+                    st.write(f"**Candidate Binomial:** *{obs.candidate_scientific_name}*")
+                    st.write(f"**Naturalist Owner ID:** `{obs.owner_id}`")
+                    st.write(f"**Coarse Locality:** {obs.coarse_location or 'Unspecified'}")
+                with c_m2:
+                    st.write(f"**Observation Date:** {obs.observation_timestamp}")
+                    st.write(f"**Provenance:** `{obs.provenance}`")
+                    st.write(f"**Status:** `{obs.moderation_status}`")
+
+                if obs.field_notes:
+                    st.markdown(f"**Field Notes:** {obs.field_notes}")
+
+                st.markdown("---")
+                with st.form(f"mod_decision_form_{obs.observation_id}"):
+                    decision = st.selectbox(
+                        "Moderation Decision:",
+                        ["ACCEPTED_FOR_CATALOG", "NEEDS_MORE_EVIDENCE", "REJECTED", "PENDING"],
+                        index=0 if obs.moderation_status == "PENDING" else 1,
+                        key=f"dec_select_{obs.observation_id}",
+                    )
+                    review_note = st.text_input(
+                        "Moderator Review Rationale:",
+                        placeholder="e.g. Diagnostic plumage markings corroborated by visual evidence.",
+                        key=f"mod_note_{obs.observation_id}",
+                    )
+                    submit_decision = st.form_submit_button("Record Moderation Decision", type="primary")
+
+                    if submit_decision:
+                        admin_service.moderate_observation(
+                            admin_user=current_user,
+                            observation_id=obs.observation_id,
+                            new_status=decision,
+                            moderation_note=review_note,
+                        )
+                        st.success(f"Observation updated to {decision}! Action recorded in security audit log.")
+                        st.rerun()
+
+    # TAB 3: User Management Directory
     with tab_users:
-        st.subheader("Registered Platform Users")
-        users = admin_service.list_users(current_user)
+        st.subheader("👥 Registered Naturalist Directory")
+        all_users = admin_service.list_users(current_user)
 
-        user_rows = [
+        user_records = [
             {
                 "User ID": u.user_id,
                 "Username": u.username,
                 "Display Name": u.display_name,
                 "Vivédex ID": u.vivedex_id,
-                "Role": u.role.upper(),
-                "Active": "Yes" if u.is_active else "No",
-                "Observations": u.observation_count,
-                "Joined": u.created_at[:10],
+                "System Role": u.role.upper(),
+                "Account Active": "Yes" if u.is_active else "No",
+                "Sightings Logged": u.observation_count,
+                "Joined Date": u.created_at[:10],
             }
-            for u in users
+            for u in all_users
         ]
-        st.dataframe(user_rows, width="stretch")
+        st.dataframe(user_records, width="stretch")
 
-    # TAB 3: Moderation Queue
-    with tab_mod:
-        st.subheader("Observation Moderation Queue")
-        st.info(f"ℹ️ {MODERATION_DISCLAIMER}")
-
-        mod_filter = st.selectbox(
-            "Filter Moderation Status:",
-            ["PENDING", "ACCEPTED_FOR_CATALOG", "NEEDS_MORE_EVIDENCE", "REJECTED", "ALL"],
-            key="admin_mod_filter",
-        )
-
-        queue = admin_service.get_moderation_queue(current_user, mod_filter)
-        st.write(f"Showing **{len(queue)}** observations")
-
-        for obs in queue:
-            prov_tag = f"[{obs.provenance}] " if obs.provenance == "DEMO DATA" else ""
-            with st.expander(f"{prov_tag}{obs.candidate_scientific_name} ({obs.observation_id}) — Status: {obs.moderation_status}"):
-                c_o1, c_o2 = st.columns(2)
-                with c_o1:
-                    st.write(f"**Observation ID:** `{obs.observation_id}`")
-                    st.write(f"**Candidate Taxon:** *{obs.candidate_scientific_name}*")
-                    st.write(f"**Owner User ID:** `{obs.owner_id}`")
-                    st.write(f"**Coarse Location:** {obs.coarse_location or 'Unspecified'}")
-                with c_o2:
-                    st.write(f"**Recorded:** {obs.observation_timestamp}")
-                    st.write(f"**Current Status:** <span class='status-pill'>{obs.moderation_status}</span>", unsafe_allow_html=True)
-                    st.write(f"**Provenance:** `{obs.provenance}`")
-
-                if obs.field_notes:
-                    st.info(f"**Field Notes:** {obs.field_notes}")
-
-                st.markdown("---")
-                with st.form(f"mod_form_{obs.observation_id}"):
-                    new_decision = st.selectbox(
-                        "Moderation Decision:",
-                        ["ACCEPTED_FOR_CATALOG", "NEEDS_MORE_EVIDENCE", "REJECTED", "PENDING"],
-                        index=0 if obs.moderation_status == "PENDING" else 1,
-                        key=f"dec_{obs.observation_id}",
-                    )
-                    mod_note = st.text_input(
-                        "Moderator Review Note:",
-                        placeholder="e.g. Morphological features align with GBIF description.",
-                        key=f"note_{obs.observation_id}",
-                    )
-                    submit_mod = st.form_submit_button("Record Decision", type="primary")
-
-                    if submit_mod:
-                        admin_service.moderate_observation(
-                            admin_user=current_user,
-                            observation_id=obs.observation_id,
-                            new_status=new_decision,
-                            moderation_note=mod_note,
-                        )
-                        st.success(f"Status updated to {new_decision}! Audit log recorded.")
-                        st.rerun()
-
-    # TAB 4: Audit Logs
+    # TAB 4: Audit History
     with tab_audit:
-        st.subheader("System Audit Log Trail")
-        logs = admin_service.get_audit_logs(current_user, limit=50)
+        st.subheader("📜 Security & Workflow Audit Trail")
+        logs = admin_service.get_audit_logs(current_user, limit=75)
 
-        log_data = [
+        log_rows = [
             {
-                "ID": l.id,
+                "Log ID": l.id,
                 "Timestamp": l.timestamp[:19],
-                "Username": l.username or "System",
-                "Action": l.action,
-                "Entity Type": l.entity_type,
-                "Entity ID": l.entity_id or "",
-                "Details": l.details or "",
+                "Actor": l.username or "System",
+                "Action Code": l.action,
+                "Entity Target": l.entity_type,
+                "Entity Key": l.entity_id or "",
+                "Event Context": l.details or "",
             }
             for l in logs
         ]
-        st.dataframe(log_data, width="stretch")
+        st.dataframe(log_rows, width="stretch")
 
-    # TAB 5: Demo Data
+    # TAB 5: Demo Data Management
     with tab_demo:
-        st.subheader("Controlled Demo Dataset Management")
+        st.subheader("📦 Controlled Demonstration Dataset Management")
         st.markdown(
             """
-            Load curated sample records labeled with **`DEMO DATA`** provenance.
-            Enables testing multi-species collections, diverse taxonomy hierarchies,
-            and moderation queues without manual image captures.
+            Seed or re-load curated demonstration records with explicit **`DEMO DATA`** provenance tags.
+            Enables testing multi-species catalogs, taxonomic classifications,
+            and moderation workflows without manual image uploads.
             """
         )
-        if st.button("📦 Load Curated Demo Dataset", type="primary"):
+        if st.button("📦 Load Controlled Demonstration Dataset", type="primary", key="admin_load_demo_btn"):
             res = load_demo_dataset(db)
-            st.success(f"Demonstration records successfully created with {res['provenance']} provenance tag!")
+            st.success(f"Demonstration records loaded successfully with {res['provenance']} provenance tag!")
             st.rerun()
-
