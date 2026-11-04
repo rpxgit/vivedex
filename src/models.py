@@ -151,3 +151,4 @@ class UserProfileRecord:
     total_xp: int
     level: int
     badge_count: int
+

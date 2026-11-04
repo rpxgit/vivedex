@@ -171,3 +171,4 @@ The knowledge graph is modeled in SQLite using relational tables (`taxa`, `taxon
 - **Single-Node SQLite:** Designed for local evaluation and small-group deployment. Concurrency is subject to SQLite file-level locking.
 - **Local Prototype Authentication:** Session authentication operates in-memory within the Streamlit runtime. It is not hardened for multi-tenant internet deployment with OAuth or JWT.
 - **API Rate Limiting:** Live Meta Model API and GBIF API calls depend on external network availability and upstream service quotas.
+

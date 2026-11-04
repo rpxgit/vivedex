@@ -92,3 +92,4 @@ def render_journal_page(collection_service: CollectionService) -> None:
                 )
                 st.success("Field notes updated successfully! (XP and achievements re-evaluated)")
                 st.rerun()
+

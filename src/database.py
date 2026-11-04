@@ -356,3 +356,4 @@ class Database:
                     """,
                     (version, utc_now_iso(), description),
                 )
+

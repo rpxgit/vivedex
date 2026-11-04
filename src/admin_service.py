@@ -297,3 +297,4 @@ class AdminService:
                 )
                 for row in cursor.fetchall()
             ]
+

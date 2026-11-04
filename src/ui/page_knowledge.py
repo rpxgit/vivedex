@@ -132,3 +132,4 @@ def render_knowledge_page(db: Database, kg_service: KnowledgeGraphService) -> No
                 st.markdown(f"- 👤 `{c_edge.source_id}` (Encounters: {c_edge.properties.get('encounters', 1)})")
         else:
             st.caption("No collectors have saved this taxon yet.")
+

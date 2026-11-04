@@ -251,3 +251,4 @@ class AuthService:
     def require_admin(user: AuthenticatedUser | None) -> None:
         """Enforce administrator permissions."""
         AuthService.require_role(user, "admin")
+

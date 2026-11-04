@@ -181,3 +181,4 @@ def render_admin_page(db: Database, admin_service: AdminService) -> None:
             res = load_demo_dataset(db)
             st.success(f"Demonstration records successfully created with {res['provenance']} provenance tag!")
             st.rerun()
+

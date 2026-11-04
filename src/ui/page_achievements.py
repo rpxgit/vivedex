@@ -89,3 +89,4 @@ def render_achievements_page(achievement_service: AchievementService) -> None:
         *Note: Vivédex does not reward duplicate submissions or use streak pressure.*
         """
     )
+

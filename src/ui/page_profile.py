@@ -121,3 +121,4 @@ def render_profile_page(
                 )
     else:
         st.caption("No badges earned yet.")
+

@@ -140,3 +140,4 @@ def render_explore_page(collection_service: CollectionService) -> None:
                     st.success(f"Saved to your collection! (Total encounters: {item.encounter_count})")
         else:
             st.info("Log in or register via the sidebar to save this taxon to your personal collection!")
+

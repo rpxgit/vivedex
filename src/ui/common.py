@@ -152,6 +152,28 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
                     except AuthenticationError as e:
                         st.error(str(e))
 
+        # Quick Demo Account login if demo accounts exist
+        with db.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, username, role FROM users WHERE username IN ('demo_admin', 'demo_naturalist') ORDER BY role ASC;")
+            demo_accounts = cursor.fetchall()
+
+        if demo_accounts:
+            st.sidebar.markdown("---")
+            st.sidebar.markdown("#### ⚡ Quick Demo Switch")
+            for d_user in demo_accounts:
+                role_label = "Admin" if d_user["role"] == "admin" else "Naturalist"
+                if st.sidebar.button(
+                    f"👤 {d_user['username']} ({role_label})",
+                    width="stretch",
+                    key=f"quick_login_{d_user['id']}",
+                ):
+                    u = auth_service.get_user_by_id(d_user["id"])
+                    if u:
+                        st.session_state["current_user"] = u
+                        st.session_state["active_user_id"] = u.id
+                        st.rerun()
+
         # Check if database has users; if empty, offer one-click demo data load
         with db.connect() as conn:
             cursor = conn.cursor()
@@ -162,5 +184,6 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
             st.sidebar.info("Database is empty. Register first user (Admin) or load sample data.")
             if st.sidebar.button("📦 Load Sample Demo Data", width="stretch"):
                 res = load_demo_dataset(db)
-                st.sidebar.success(f"Demo data loaded. Admin & Naturalist ready.")
+                st.sidebar.success("Demo data loaded. Admin & Naturalist ready.")
                 st.rerun()
+

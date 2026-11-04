@@ -71,3 +71,4 @@ def render_collection_page(collection_service: CollectionService) -> None:
                     collection_service.remove_from_collection(current_user.id, item.taxon_id)
                     st.success("Removed from collection.")
                     st.rerun()
+

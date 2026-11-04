@@ -324,3 +324,4 @@ class KnowledgeGraphService:
                 )
 
         return {"nodes": nodes, "edges": edges}
+
