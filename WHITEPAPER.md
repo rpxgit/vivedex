@@ -200,3 +200,4 @@ Vivédex demonstrates that modern biodiversity discovery tools can combine acces
 2. Restor Foundation (2023). Restor: Open Data for Ecological Restoration. https://restor.eco.
 3. ORCID Inc. (2024). Open Researcher and Contributor ID Specification. https://orcid.org.
 4. Habitica (2024). Gamified Productivity Mechanics and Community Progression. https://habitica.com.
+

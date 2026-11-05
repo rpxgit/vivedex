@@ -75,3 +75,4 @@ Vivédex is built with the following open-source libraries and frameworks:
 
 - **User Photographs:** Naturalists retain copyright over their submitted photographs. When submitting observations to the community catalog, users license their metadata under Creative Commons Attribution 4.0 International (CC BY 4.0) to support scientific research.
 - **Location Privacy:** Coarse geographic coordinates are logged at the field site or regional level. Precise micro-coordinates of endangered taxa are protected from public exposure.
+

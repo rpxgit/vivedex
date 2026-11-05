@@ -76,3 +76,4 @@ Status classification:
 | Official ORCID API Integration | Live OAuth2 sync with formal ORCID public researcher registry | **PLANNED** | Passport data model ready for ORCID synchronization |
 | Site Ecological Impact Metrics | Long-term biodiversity trend analysis and restoration tracking | **PLANNED** | Extends dynamic species richness service |
 | Multi-Tenant Data Partitioning | Isolated workspaces for private conservation projects | **PLANNED** | Requires schema migration to tenant isolation |
+

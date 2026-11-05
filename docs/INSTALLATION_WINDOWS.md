@@ -151,3 +151,4 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Start-Vivedex.ps1 -Port 850
 ### Issue: Python Not Recognized
 If Python is not detected:
 **Resolution:** Download and install Python 3.10+ from [python.org](https://www.python.org). Ensure you check **"Add Python to PATH"** during installation.
+
