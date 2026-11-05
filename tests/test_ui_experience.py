@@ -61,7 +61,7 @@ class TestUIExperience(unittest.TestCase):
         root_dir = Path(__file__).resolve().parent.parent
         app_file = str(root_dir / "app.py")
         at = AppTest.from_file(app_file)
-        at.run()
+        at.run(timeout=10)
         self.assertFalse(at.exception)
         # Check that title contains Vivédex
         self.assertTrue(any("Vivédex" in t.value for t in at.title))

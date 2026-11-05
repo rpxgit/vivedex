@@ -74,12 +74,16 @@ def render_organisations_page(db: Database) -> None:
                     if not no_name.strip():
                         st.error("Organisation name is required.")
                     else:
-                        new_o = eco_service.create_organisation(
-                            name=no_name,
-                            description=no_desc,
-                            website_url=no_url,
-                            country=no_country,
-                        )
-                        st.success(f"Organisation '{new_o.name}' registered!")
-                        st.rerun()
+                        try:
+                            new_o = eco_service.create_organisation(
+                                name=no_name,
+                                description=no_desc,
+                                website_url=no_url,
+                                country=no_country,
+                                admin_user=current_user,
+                            )
+                            st.success(f"Organisation '{new_o.name}' registered!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(str(e))
 

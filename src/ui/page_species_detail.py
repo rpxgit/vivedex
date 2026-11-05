@@ -228,6 +228,8 @@ def render_species_detail_page(
                     collection_service.save_to_collection(current_user.id, taxon_id, enc_note)
                     st.success("Encounter recorded! XP and badges evaluated.")
                     st.rerun()
+        else:
+            st.info("Log in or register via the sidebar to record this organism in your personal Dex.")
 
         # Taxonomic Hierarchy
         st.markdown("### 🏛️ Taxonomic Classification (GBIF)")
@@ -283,7 +285,7 @@ def render_species_detail_page(
                    o.field_notes, o.moderation_status, o.provenance, u.username
             FROM observations o
             JOIN users u ON o.owner_id = u.id
-            WHERE o.matched_taxon_id = ?
+            WHERE o.matched_taxon_id = ? AND o.moderation_status = 'ACCEPTED_FOR_CATALOG'
             ORDER BY o.observation_timestamp DESC
             LIMIT 5;
             """,

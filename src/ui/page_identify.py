@@ -321,6 +321,8 @@ def render_identify_page(
                                 observation_id=obs_rec.observation_id,
                                 site_id=sel_site_id,
                                 expedition_id=sel_exp_id,
+                                user_id=current_user.id,
+                                is_admin=current_user.is_admin,
                             )
 
                         # Evaluate user quests and habits

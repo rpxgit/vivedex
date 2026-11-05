@@ -173,17 +173,21 @@ def render_sites_projects_page(db: Database) -> None:
                         if not np_title.strip():
                             st.error("Project title is required.")
                         else:
-                            p = eco_service.create_project(
-                                title=np_title,
-                                summary=np_summary,
-                                organisation_id=org_options[np_org],
-                                lead_user_id=current_user.id,
-                                target_habitat=np_habitat,
-                                target_species_count=int(np_species_target),
-                                status="ACTIVE",
-                            )
-                            st.success(f"Project '{p.title}' initialized successfully!")
-                            st.rerun()
+                            try:
+                                p = eco_service.create_project(
+                                    title=np_title,
+                                    summary=np_summary,
+                                    organisation_id=org_options[np_org],
+                                    lead_user_id=current_user.id,
+                                    target_habitat=np_habitat,
+                                    target_species_count=int(np_species_target),
+                                    status="ACTIVE",
+                                    user=current_user,
+                                )
+                                st.success(f"Project '{p.title}' initialized successfully!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(str(e))
 
     # -------------------------------------------------------------------------
     # TAB 3: FIELD EXPEDITIONS

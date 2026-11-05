@@ -6,10 +6,12 @@ Calculates species richness and connects field observations to ecological locati
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from typing import Any
 
+from src.auth import AuthorizationError
 from src.database import Database, utc_now_iso
 
 
@@ -144,8 +146,11 @@ class EcologicalService:
         website_url: str = "",
         logo_url: str = "",
         country: str = "",
+        admin_user: Any = None,
     ) -> Organisation:
-        """Register a new partner organisation."""
+        """Register a new partner organisation. Guarded by server-side administrator check."""
+        if admin_user is not None and not getattr(admin_user, "is_admin", False):
+            raise AuthorizationError("Only platform administrators can register partner organisations.")
         final_slug = slug or slugify(name)
         now = utc_now_iso()
         with self.db.connect() as conn:
@@ -326,8 +331,33 @@ class EcologicalService:
         target_habitat: str = "",
         target_species_count: int = 0,
         status: str = "ACTIVE",
+        user: Any = None,
     ) -> Project:
-        """Create a new project."""
+        """Create a new project. Validates institutional affiliation if linked to an organisation."""
+        if organisation_id is not None and user is not None:
+            is_admin = getattr(user, "is_admin", False)
+            if not is_admin:
+                # Check user profile affiliations
+                with self.db.connect() as conn:
+                    c = conn.cursor()
+                    c.execute("SELECT affiliations FROM user_profiles WHERE user_id = ?;", (user.id,))
+                    row = c.fetchone()
+                    affils: list[str] = []
+                    if row and row[0]:
+                        try:
+                            parsed_affils = json.loads(row[0])
+                            if isinstance(parsed_affils, list):
+                                affils = parsed_affils
+                        except Exception:
+                            affils = [a.strip() for a in str(row[0]).split(",") if a.strip()]
+                    c.execute("SELECT name FROM organisations WHERE id = ?;", (organisation_id,))
+                    org_row = c.fetchone()
+                    org_name = org_row[0] if org_row else ""
+                    if org_name and not any(a.lower() == org_name.lower() for a in affils):
+                        raise AuthorizationError(
+                            f"Project attribution to '{org_name}' requires verified institutional affiliation or platform administrator privileges."
+                        )
+
         final_slug = slug or slugify(title)
         now = utc_now_iso()
         with self.db.connect() as conn:
@@ -502,10 +532,25 @@ class EcologicalService:
         site_id: int | None = None,
         expedition_id: int | None = None,
         project_id: int | None = None,
+        user_id: int | None = None,
+        is_admin: bool = False,
     ) -> bool:
-        """Link an observation to ecological entities."""
+        """Link an observation to ecological entities. Requires ownership or admin."""
         with self.db.connect() as conn:
             cursor = conn.cursor()
+            if not is_admin and user_id is not None:
+                cursor.execute(
+                    "SELECT owner_id FROM observations WHERE observation_id = ?;",
+                    (observation_id,),
+                )
+                row = cursor.fetchone()
+                if not row:
+                    raise ValueError(f"Observation '{observation_id}' not found.")
+                if row[0] != user_id:
+                    raise PermissionError(
+                        "You can only link your own observations to ecological sites and expeditions."
+                    )
+
             cursor.execute(
                 """
                 UPDATE observations

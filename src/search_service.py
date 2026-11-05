@@ -31,8 +31,18 @@ class SearchService:
     def __init__(self, db: Database) -> None:
         self.db = db
 
-    def search(self, query: str, limit_per_category: int = 10) -> SearchResultGroup:
-        """Perform cross-entity search for the provided query string."""
+    def search(
+        self,
+        query: str,
+        limit_per_category: int = 10,
+        user_id: int | None = None,
+        is_admin: bool = False,
+    ) -> SearchResultGroup:
+        """Perform cross-entity search for the provided query string.
+
+        Guards privacy by ensuring unmoderated/rejected observations are only visible
+        to their owner or an administrator.
+        """
         clean_q = query.strip()
         if not clean_q:
             return SearchResultGroup([], [], [], [], [], [], 0)
@@ -96,19 +106,48 @@ class SearchService:
             )
             expeditions = [dict(r) for r in cursor.fetchall()]
 
-            # 5. Observations search
-            cursor.execute(
-                """
-                SELECT o.observation_id, o.candidate_scientific_name, o.coarse_location,
-                       o.taxonomic_resolution, o.moderation_status, o.observation_timestamp,
-                       t.common_name
-                FROM observations o
-                LEFT JOIN taxa t ON t.taxon_id = o.matched_taxon_id
-                WHERE o.candidate_scientific_name LIKE ? OR o.field_notes LIKE ? OR o.coarse_location LIKE ?
-                LIMIT ?;
-                """,
-                (pattern, pattern, pattern, limit_per_category),
-            )
+            # 5. Observations search (Strict moderation & ownership filtering)
+            if is_admin:
+                cursor.execute(
+                    """
+                    SELECT o.observation_id, o.candidate_scientific_name, o.coarse_location,
+                           o.taxonomic_resolution, o.moderation_status, o.observation_timestamp,
+                           t.common_name
+                    FROM observations o
+                    LEFT JOIN taxa t ON t.taxon_id = o.matched_taxon_id
+                    WHERE (o.candidate_scientific_name LIKE ? OR o.field_notes LIKE ? OR o.coarse_location LIKE ?)
+                    LIMIT ?;
+                    """,
+                    (pattern, pattern, pattern, limit_per_category),
+                )
+            elif user_id is not None:
+                cursor.execute(
+                    """
+                    SELECT o.observation_id, o.candidate_scientific_name, o.coarse_location,
+                           o.taxonomic_resolution, o.moderation_status, o.observation_timestamp,
+                           t.common_name
+                    FROM observations o
+                    LEFT JOIN taxa t ON t.taxon_id = o.matched_taxon_id
+                    WHERE (o.moderation_status = 'ACCEPTED_FOR_CATALOG' OR o.owner_id = ?)
+                      AND (o.candidate_scientific_name LIKE ? OR o.field_notes LIKE ? OR o.coarse_location LIKE ?)
+                    LIMIT ?;
+                    """,
+                    (user_id, pattern, pattern, pattern, limit_per_category),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT o.observation_id, o.candidate_scientific_name, o.coarse_location,
+                           o.taxonomic_resolution, o.moderation_status, o.observation_timestamp,
+                           t.common_name
+                    FROM observations o
+                    LEFT JOIN taxa t ON t.taxon_id = o.matched_taxon_id
+                    WHERE o.moderation_status = 'ACCEPTED_FOR_CATALOG'
+                      AND (o.candidate_scientific_name LIKE ? OR o.field_notes LIKE ? OR o.coarse_location LIKE ?)
+                    LIMIT ?;
+                    """,
+                    (pattern, pattern, pattern, limit_per_category),
+                )
             observations = [dict(r) for r in cursor.fetchall()]
 
             # 6. Public Researchers search

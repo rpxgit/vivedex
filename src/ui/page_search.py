@@ -48,7 +48,12 @@ def render_search_page(db: Database) -> None:
         )
         return
 
-    results = search_service.search(query.strip())
+    current_user = st.session_state.get("current_user")
+    results = search_service.search(
+        query.strip(),
+        user_id=current_user.id if current_user else None,
+        is_admin=current_user.is_admin if current_user else False,
+    )
     st.markdown(f"**Found {results.total_matches} matches for '{escape_text(query)}'**")
 
     tab_all, tab_taxa, tab_sites, tab_proj, tab_obs, tab_res = st.tabs([
