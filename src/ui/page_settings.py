@@ -242,7 +242,9 @@ def render_settings_page(
             st.write(f"**Contributor ID:** `{escape_text(current_user.vivedex_id)}`")
         with col_a2:
             st.write(f"**Naturalist Role:** `{escape_text(current_user.role.upper())}`")
-            st.write(f"**Account Created:** {escape_text(current_user.created_at[:10])}")
+            created_val = getattr(current_user, "created_at", "") or ""
+            created_disp = created_val[:10] if len(created_val) >= 10 else "N/A"
+            st.write(f"**Account Created:** {escape_text(created_disp)}")
             st.write(f"**Administrator Privileges:** {'Yes' if current_user.is_admin else 'Standard User'}")
 
         st.caption("To update your biography, institution, or ORCID identifier, visit your [Researcher Passport](/passport).")

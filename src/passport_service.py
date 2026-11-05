@@ -10,6 +10,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from src.achievements import AchievementService
 from src.database import Database, utc_now_iso
 
 
@@ -57,6 +58,7 @@ class PassportService:
 
     def __init__(self, db: Database) -> None:
         self.db = db
+        self.achievement_service = AchievementService(db)
 
     def get_passport(self, user_id: int) -> ResearcherPassport | None:
         """Fetch complete researcher passport for a user."""
@@ -122,29 +124,17 @@ class PassportService:
             # Badge & XP metrics
             cursor.execute(
                 """
-                SELECT COUNT(b.id), COALESCE(SUM(b.xp_reward), 0)
+                SELECT COUNT(b.id)
                 FROM user_badges ub
                 JOIN badges b ON b.id = ub.badge_id
                 WHERE ub.user_id = ?;
                 """,
                 (user_id,),
             )
-            b_row = cursor.fetchone()
-            badges_count = b_row[0]
-            badges_xp = b_row[1]
+            badges_count = cursor.fetchone()[0] or 0
 
-            # Claimed quest XP
-            cursor.execute(
-                """
-                SELECT COALESCE(SUM(q.xp_reward), 0)
-                FROM user_quests uq
-                JOIN quests q ON q.id = uq.quest_id
-                WHERE uq.user_id = ? AND uq.claimed_at IS NOT NULL;
-                """,
-                (user_id,),
-            )
-            quest_xp = cursor.fetchone()[0]
-            total_xp = badges_xp + quest_xp
+            # Unified authoritative XP calculation
+            total_xp = self.achievement_service.calculate_user_xp(user_id)
 
             # Research outputs
             cursor.execute(

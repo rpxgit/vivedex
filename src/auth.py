@@ -46,6 +46,7 @@ class AuthenticatedUser:
     display_name: str
     vivedex_id: str
     is_active: bool
+    created_at: str = ""
 
     @property
     def is_admin(self) -> bool:
@@ -253,6 +254,7 @@ class AuthService:
                 display_name=clean_display_name,
                 vivedex_id=vivedex_id,
                 is_active=True,
+                created_at=created_at,
             )
 
     def provision_admin_user(
@@ -346,6 +348,7 @@ class AuthService:
                 display_name=clean_display_name,
                 vivedex_id=vivedex_id,
                 is_active=True,
+                created_at=created_at,
             )
 
     def authenticate_user(self, username: str, password: str) -> AuthenticatedUser:
@@ -365,7 +368,7 @@ class AuthService:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT u.id, u.username, u.password_hash, u.salt, u.role, u.is_active,
+                SELECT u.id, u.username, u.password_hash, u.salt, u.role, u.is_active, u.created_at,
                        p.display_name, p.vivedex_id
                 FROM users u
                 LEFT JOIN user_profiles p ON u.id = p.user_id
@@ -382,7 +385,15 @@ class AuthService:
             self._record_failed_login(clean_username)
             raise AuthenticationError("Invalid username or password.")
 
-        user_id, uname, pwd_hash, salt, role, is_active, display_name, vivedex_id = row
+        user_id = row["id"]
+        uname = row["username"]
+        pwd_hash = row["password_hash"]
+        salt = row["salt"]
+        role = row["role"]
+        is_active = row["is_active"]
+        display_name = row["display_name"]
+        vivedex_id = row["vivedex_id"]
+        user_created_at = row["created_at"] or ""
 
         if not is_active:
             self._record_failed_login(clean_username)
@@ -414,6 +425,7 @@ class AuthService:
             display_name=display_name or uname,
             vivedex_id=vivedex_id or f"VDX-{user_id}",
             is_active=bool(is_active),
+            created_at=user_created_at,
         )
 
     def get_user_by_id(self, user_id: int) -> AuthenticatedUser | None:
@@ -422,7 +434,7 @@ class AuthService:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT u.id, u.username, u.role, u.is_active, p.display_name, p.vivedex_id
+                SELECT u.id, u.username, u.role, u.is_active, u.created_at, p.display_name, p.vivedex_id
                 FROM users u
                 LEFT JOIN user_profiles p ON u.id = p.user_id
                 WHERE u.id = ?;
@@ -439,6 +451,7 @@ class AuthService:
                 display_name=row["display_name"] or row["username"],
                 vivedex_id=row["vivedex_id"] or f"VDX-{row['id']}",
                 is_active=bool(row["is_active"]),
+                created_at=row["created_at"] or "",
             )
 
     def update_password(self, user_id: int, new_password: str) -> None:

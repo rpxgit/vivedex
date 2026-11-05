@@ -44,6 +44,10 @@ class UserGamificationStats:
     level_progress_percentage: float
     badges_earned_count: int
     total_badges_count: int
+    total_observations: int = 0
+    species_collected: int = 0
+    families_count: int = 0
+    badges_unlocked_count: int = 0
 
 
 class AchievementService:
@@ -104,7 +108,19 @@ class AchievementService:
             )
             badge_xp = cursor.fetchone()[0] or 0
 
-            return encounter_xp + notes_xp + accepted_xp + badge_xp
+            # 5. Bonus XP from claimed quests and habits (Habitica-inspired)
+            cursor.execute(
+                """
+                SELECT COALESCE(SUM(q.xp_reward), 0)
+                FROM user_quests uq
+                JOIN quests q ON uq.quest_id = q.id
+                WHERE uq.user_id = ? AND uq.claimed_at IS NOT NULL;
+                """,
+                (user_id,),
+            )
+            quest_xp = cursor.fetchone()[0] or 0
+
+            return encounter_xp + notes_xp + accepted_xp + badge_xp + quest_xp
 
     def get_user_gamification_stats(self, user_id: int) -> UserGamificationStats:
         """Calculate complete XP, level, progress, and badge counts for a user."""
@@ -123,6 +139,27 @@ class AchievementService:
             cursor.execute("SELECT COUNT(*) FROM badges;")
             total_badges = cursor.fetchone()[0] or 0
 
+            cursor.execute(
+                "SELECT COUNT(*) FROM observations WHERE owner_id = ?;", (user_id,)
+            )
+            total_obs = cursor.fetchone()[0] or 0
+
+            cursor.execute(
+                "SELECT COUNT(DISTINCT taxon_id) FROM collections WHERE user_id = ?;", (user_id,)
+            )
+            distinct_taxa = cursor.fetchone()[0] or 0
+
+            cursor.execute(
+                """
+                SELECT COUNT(DISTINCT t.family)
+                FROM observations o
+                JOIN taxa t ON o.matched_taxon_id = t.taxon_id
+                WHERE o.owner_id = ? AND t.family IS NOT NULL AND trim(t.family) != '';
+                """,
+                (user_id,),
+            )
+            families = cursor.fetchone()[0] or 0
+
         return UserGamificationStats(
             total_xp=total_xp,
             level=level,
@@ -131,6 +168,10 @@ class AchievementService:
             level_progress_percentage=round(progress_pct, 1),
             badges_earned_count=earned_badges,
             total_badges_count=total_badges,
+            total_observations=total_obs,
+            species_collected=distinct_taxa,
+            families_count=families,
+            badges_unlocked_count=earned_badges,
         )
 
     def evaluate_user_achievements(self, user_id: int) -> list[str]:

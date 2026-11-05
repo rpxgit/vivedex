@@ -599,6 +599,15 @@ class CollectionService:
                 for row in cursor.fetchall()
             ]
 
+    def list_user_observations(
+        self,
+        user_id: int,
+        limit: int = 10,
+    ) -> list[ObservationRecord]:
+        """Fetch latest observations owned by a specific user with a limit."""
+        obs = self.get_user_observations(user_id)
+        return obs[:limit]
+
     def get_user_profile(self, user_id: int) -> UserProfileRecord | None:
         """Fetch researcher profile and computed summary metrics."""
         with self.db.connect() as conn:
