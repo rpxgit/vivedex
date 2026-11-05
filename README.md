@@ -1,174 +1,174 @@
 # Vivédex
 
-**A biodiversity discovery, identification, collection, and contribution platform.**
+**A provenance-aware biodiversity discovery, identification, collection, and contribution platform.**
 
-Vivédex turns an organism photograph into a cautious, explainable candidate identification and a taxonomically resolved, provenance-backed species card, integrated with personal collection catalogs, Restor-inspired ecological context, Habitica-inspired field habits, and ORCID-inspired researcher passports.
-
----
-
-## Platform Evolution & Specifications
-
-- **Product Experience Specification (v2.0):** [`docs/PRODUCT_EXPERIENCE_SPEC.md`](docs/PRODUCT_EXPERIENCE_SPEC.md)
-- **Feature Completion Matrix:** [`docs/FEATURE_COMPLETION_MATRIX.md`](docs/FEATURE_COMPLETION_MATRIX.md)
-- **Security Audit & Hardening:** [`docs/security/SECURITY_AUDIT.md`](docs/security/SECURITY_AUDIT.md) & [`docs/security/REMEDIATION_BACKLOG.md`](docs/security/REMEDIATION_BACKLOG.md)
-- **Platform Specification:** [`docs/PLATFORM_SPEC.md`](docs/PLATFORM_SPEC.md)
-- **Experience Design Specification:** [`docs/EXPERIENCE_DESIGN_SPEC.md`](docs/EXPERIENCE_DESIGN_SPEC.md)
+Vivédex transforms organism photographs into explainable candidate identifications and taxonomically reconciled species records. The platform connects individual sightings with personal specimen collections, Restor-inspired ecological context, Habitica-inspired field habits, and ORCID-inspired researcher passports.
 
 ---
 
-## 1. Project Purpose & Philosophy
+## Technical Specifications and Documentation
 
-Modern biodiversity discovery requires a balance between rapid multimodal AI inference and rigorous taxonomic provenance:
-- **AI identifications are candidate suggestions, not confirmed scientific facts.**
-- **Taxonomic reconciliation must preserve authoritative sources.** Vivédex links proposed binomials to the Global Biodiversity Information Facility (GBIF) Backbone Taxonomy under CC BY 4.0.
-- **Privacy and provenance are first-class principles.** Images are processed in-memory with EXIF metadata stripped; data licensing metadata is preserved across all records and exports.
-- **Engaging citizen science and ecological storytelling.** Inspired by botanical atlases, Restor.eco, Pokédex, Habitica, and ORCID, naturalists earn experience points, build field habits, explore monitored field sites, and curate persistent researcher passports.
-
----
-
-## 2. Platform Navigation & Modules
-
-The platform interface features a light botanical editorial design with verified WCAG AA contrast ($\ge 4.5:1$) and zero heading redundancy, structured into four main operational categories plus administrator governance:
-
-### 🧭 Discover & Catalog
-1. **Expedition Hub (Home):** Naturalist dashboard with live platform statistics, core 6-step naturalist workflow, featured habitats, and public onboarding controls.
-2. **Global Discovery Search:** Fast, cross-entity query engine across taxa, field sites, conservation projects, expeditions, and naturalist profiles.
-3. **Explore Dex:** Query the GBIF Backbone Taxonomy by scientific or vernacular name, inspect hierarchies, and save directly to personal collections.
-4. **Identify Specimen:** 10-step multimodal AI vision pipeline with Meta Muse Spark, in-memory EXIF stripping, explainable diagnostic traits, and ecological site linking.
-5. **My Dex Collection:** Personal species catalog tracking first/latest encounters, encounter counts, and personal field notes.
-6. **Field Journal:** Persistent observation diary with editable notes, coarse location logging, and moderation status inspection.
-
-### 📍 Ecology & Field Work (Restor.eco Inspired)
-7. **Field Sites & Expeditions:** Monitored ecosystems with biomes, coordinates, elevation, dynamic species richness derived from actual sightings, and active scientific expeditions.
-8. **Partner Organisations:** Accredited botanical gardens, universities, and conservation foundations supporting field research.
-
-### ⚡ Naturalist Progression (Habitica Inspired)
-9. **Quests & Habits:** Non-punitive daily field habits (e.g. Daily Field Scan, Botanical Journaling), weekly BioBlitz goals, and milestone quests with XP rewards.
-10. **Milestone Badges:** Rule-based achievement engine (First Encounter, Collector, Family Explorer, Field Naturalist, Contributor) with level progression.
-
-### 👤 Science & Identity (ORCID Inspired)
-11. **Researcher Passport:** Persistent Contributor ID (`VDX-XXXXXX`), institutional affiliations, research interests, and research outputs (datasets, publications, checklists) with transparent provenance states (`SELF_REPORTED`, `SOURCE_LINKED`, `PLATFORM_REVIEWED`, `EXTERNALLY_VERIFIED`).
-12. **Taxonomic Knowledge Graph:** Interactive SQLite-backed taxonomic knowledge graph with lineage trees, child nodes, and connected sightings.
-13. **Account Settings:** Bring Your Own Key (BYOK) Meta Model API configuration, connection testing, session-isolated memory storage, account credentials, and privacy safeguards.
-
-### 🛡️ Governance (Role-Gated)
-14. **Admin Console:** Role-protected console with platform metrics, user directory, observation moderation queue, and security audit logs.
+- **Technical Whitepaper:** [`WHITEPAPER.md`](WHITEPAPER.md) — Architectural overview, design philosophy, and data governance.
+- **Product Roadmap:** [`ROADMAP.md`](ROADMAP.md) — Implementation status across release phases.
+- **Data Sources & Attribution:** [`DATA_SOURCES_AND_ATTRIBUTION.md`](DATA_SOURCES_AND_ATTRIBUTION.md) — Authoritative data licensing and GBIF Backbone Taxonomy notice.
+- **Windows Installation Guide:** [`docs/INSTALLATION_WINDOWS.md`](docs/INSTALLATION_WINDOWS.md) — One-click launcher, PowerShell scripts, and administrator setup.
+- **Product Experience Specification:** [`docs/PRODUCT_EXPERIENCE_SPEC.md`](docs/PRODUCT_EXPERIENCE_SPEC.md) — UI design system and component rules.
+- **Feature Completion Matrix:** [`docs/FEATURE_COMPLETION_MATRIX.md`](docs/FEATURE_COMPLETION_MATRIX.md) — Status across all 13 application modules.
+- **Security Audit & Hardening:** [`docs/security/SECURITY_AUDIT.md`](docs/security/SECURITY_AUDIT.md) and [`docs/security/REMEDIATION_BACKLOG.md`](docs/security/REMEDIATION_BACKLOG.md).
 
 ---
 
-## 3. Architecture
+## 1. Project Purpose and Principles
+
+Modern biodiversity monitoring requires balance between fast machine-learning inference and rigorous scientific provenance:
+- **Identifications are hypotheses:** Artificial intelligence predictions are unconfirmed suggestions, not certified scientific facts.
+- **Authoritative taxonomic reconciliation:** Proposed names are reconciled against the Global Biodiversity Information Facility (GBIF) Backbone Taxonomy under CC BY 4.0.
+- **Observer privacy by design:** Images are processed in volatile memory. EXIF metadata, GPS micro-coordinates, and device tags are stripped before network transmission.
+- **Persistent researcher attribution:** Observers receive unique Contributor IDs (`VDX-XXXXXX`) and record research outputs with auditable provenance states.
+- **Ecological habit building:** Naturalists earn non-punitive experience points (XP), complete weekly BioBlitz quests, and monitor dynamic species richness at accredited field sites.
+
+---
+
+## 2. Platform Architecture and Modules
+
+The platform is structured into four functional sections plus role-gated governance:
 
 ```
-[User Image Input] (Upload JPG / PNG / WebP)
-         │
-         ▼
-[Image Processor (`src/image_processor.py`)]
-   ├── Size & MIME validation (<= 8 MB)
-   └── In-memory EXIF metadata stripping & orientation normalization
-         │
-         ▼
+[Specimen Photo Upload] (JPG, PNG, WebP <= 8 MB)
+          │
+          ▼
+[In-Memory Image Processor (`src/image_processor.py`)]
+    └── Header validation, orientation normalization, EXIF stripped
+          │
+          ▼
 [Meta Model API (`src/meta_adapter.py`)]
-   ├── Model: `muse-spark-1.3`
-   ├── Prompt: Strict structured JSON schema
-   └── Output: Candidate identification, morphological traits, lookalikes, uncertainty
-         │
-         ▼
+    └── Model: `muse-spark-1.3` (Candidate identification, diagnostic traits)
+          │
+          ▼
 [GBIF Species Match API (`src/gbif_adapter.py`)]
-   ├── Endpoint: `https://api.gbif.org/v1/species/match`
-   └── Reconciliation: Taxon key, canonical name, status, match type, classification
-         │
-         ▼
+    └── Authoritative taxonomic verification (TaxonKey, status, classification)
+          │
+          ▼
 [Domain Services Layer]
-   ├── EcologicalService (`src/ecological_service.py`): Field sites & species richness
-   ├── QuestService (`src/quest_service.py`): Habits & milestone XP tracking
-   ├── PassportService (`src/passport_service.py`): Contributor passport & outputs
-   ├── SearchService (`src/search_service.py`): Cross-entity discovery search
-   ├── CollectionService (`src/collection_service.py`): Observations & collections
-   └── AchievementService (`src/achievements.py`): Milestone badges & ranks
-         │
-         ▼
+    ├── EcologicalService (`src/ecological_service.py`): Field sites & species richness
+    ├── QuestService (`src/quest_service.py`): Habits & milestone XP tracking
+    ├── PassportService (`src/passport_service.py`): Contributor passport & outputs
+    ├── SearchService (`src/search_service.py`): Cross-entity discovery search
+    ├── CollectionService (`src/collection_service.py`): Observations & collections
+    └── AchievementService (`src/achievements.py`): Milestone badges & ranks
+          │
+          ▼
 [Streamlit Interface (`app.py`)]
-   ├── Light botanical theme (.streamlit/config.toml, WCAG AA compliant >= 4.5:1)
-   ├── Sectioned navigation with 13 specialized pages
-   └── JSON Export (`VivedexResult.to_json()`)
+    └── Light botanical design system (WCAG AA contrast >= 4.5:1, 13 modular views)
 ```
+
+### Module Directory
+1. **Expedition Hub (`/home`):** Overview dashboard, platform statistics, and quick-start workflow.
+2. **Global Search (`/search`):** Search across species, field sites, expeditions, and researchers.
+3. **Explore Dex (`/explore`):** Query GBIF Backbone Taxonomy by scientific or common name.
+4. **Identify Specimen (`/identify`):** 10-step multimodal AI vision pipeline with diagnostic traits and site linking.
+5. **My Dex Collection (`/mydex`):** Personal species herbarium tracking first encounters and notes.
+6. **Field Journal (`/journal`):** Persistent observation log with moderation status indicators.
+7. **Field Sites & Expeditions (`/sites`):** Monitored ecosystems with dynamic species richness metrics.
+8. **Partner Organisations (`/organisations`):** Accredited institutions supporting field research.
+9. **Quests & Habits (`/quests`):** Daily field habits, BioBlitz goals, and XP progression.
+10. **Milestone Badges (`/achievements`):** Rule-based milestone badge progression.
+11. **Researcher Passport (`/passport`):** Contributor ID, institutional affiliations, and verified research outputs.
+12. **Taxonomic Knowledge (`/knowledge`):** SQLite phylogenetic graph traversal.
+13. **Account Settings (`/settings`):** Bring Your Own Key (BYOK) Meta Model API management and privacy controls.
+14. **Admin Console (`/admin`):** Role-gated observation moderation queue and audit logs.
 
 ---
 
-## 4. Installation & Setup
+## 3. Installation and Launch (Windows)
 
-### Prerequisites
-- Python 3.11 or higher (Python 3.14 compatible).
+### Option A: One-Click Launcher (Recommended)
+Double-click `Launch-Vivedex.bat` in the repository root.
 
-### Clone & Install
-```bash
-git clone https://github.com/rpxgit/vivedex.git
-cd vivedex
-pip install -r requirements.txt
-```
+The launcher executes the following tasks automatically:
+1. Detects Python 3.10+ on the system.
+2. Creates a local virtual environment (`.venv`) if absent.
+3. Installs dependencies from `requirements.txt`.
+4. Initializes database schema tables safely without data loss.
+5. Starts the Streamlit server on `http://localhost:8501`.
+6. Opens the application in the default web browser.
 
-### Configuration & Bring Your Own Key (BYOK)
-
-Vivédex supports both Bring Your Own Key (BYOK) user connections and operator environment configurations:
-
-1. **User Key (BYOK — Recommended):**
-   - Authenticated users can open **Account Settings** (`/settings`), follow instructions to generate a key at [dev.meta.ai](https://dev.meta.ai/), and connect their personal key.
-   - **Session-Only Memory Storage:** User keys are stored strictly in volatile server session memory for the duration of the active session. Keys are never saved to SQLite, user profile records, observations, or export files.
-   - Includes a built-in **Test Connection** tool verifying `muse-spark-1.3` endpoint responsiveness.
-
-2. **Operator Environment Key:**
-   - Operators can optionally configure a global default key via `.env` or system environment variables:
-     ```powershell
-     # Windows PowerShell
-     $env:MODEL_API_KEY = "your_meta_model_api_key_here"
-
-     # Linux / macOS
-     export MODEL_API_KEY="your_meta_model_api_key_here"
-     ```
-   - Whenever an authenticated user connects their personal key, **My Meta API Key** takes priority over any application-provided key.
-
-3. **Demo Fixture Mode:**
-   - If neither a user key nor an operator key is configured, Vivédex defaults to **Demo Fixture Mode**, enabling full exploration using pre-recorded reference specimen data.
-
----
-
-## 5. Running the Application
-
-Launch the Streamlit app with one command:
+### Option B: PowerShell Commands
 ```powershell
-streamlit run app.py
-```
-Or via the Python launcher on Windows:
-```powershell
-py -m streamlit run app.py
+# 1. Initialize environment and dependencies
+powershell -ExecutionPolicy Bypass -File scripts\Initialize-Vivedex.ps1
+
+# 2. Run diagnostic health checks
+powershell -ExecutionPolicy Bypass -File scripts\Check-Vivedex.ps1
+
+# 3. Launch application
+powershell -ExecutionPolicy Bypass -File scripts\Start-Vivedex.ps1
 ```
 
-Open your browser at `http://localhost:8501` (or the port reported by Streamlit).
+For complete Windows setup instructions, see [`docs/INSTALLATION_WINDOWS.md`](docs/INSTALLATION_WINDOWS.md).
 
 ---
 
-## 6. Testing
+## 4. Bring Your Own Key (BYOK) Configuration
 
-Run the full automated test suite (71 tests covering backend, platform, security, UI, and experience overhaul):
+Vivédex uses a session-isolated Bring Your Own Key model:
+
+1. **Connect via UI:**
+   - Log into your account and open **Account Settings** (`/settings`).
+   - Enter your Meta Model API key from [dev.meta.ai](https://dev.meta.ai/).
+   - Click **Test & Connect Meta Model API**.
+2. **Volatile Session Storage:**
+   - User keys remain strictly in volatile server memory (`st.session_state`).
+   - Keys are **never** persisted to SQLite, user profile rows, observation records, or export files.
+3. **Environment Fallback:**
+   - Operators can define `MODEL_API_KEY` in `.env` or system environment variables as a global fallback.
+4. **Demo Fixture Mode:**
+   - If no key is configured, Vivédex defaults to Demo Fixture Mode using reference specimen data.
+
+---
+
+## 5. Administrator Provisioning
+
+Vivédex never creates an administrator account automatically. To provision an administrator account:
+
 ```powershell
-py -m pytest -v
-```
-Or using Python's standard unittest runner:
-```powershell
-py -m unittest discover -s tests -p "test_*.py" -v
+# Using the virtual environment python:
+.\.venv\Scripts\python.exe -m src.cli create-admin --username admin --password "StrongPassw0rd!" --display-name "Lead Naturalist"
+
+# Check administrator presence:
+.\.venv\Scripts\python.exe -m src.cli check-admin
 ```
 
 ---
 
-## 7. Data Sources & Provenance
+## 6. Automated Verification and Tests
 
-- **Taxonomic Backbone:** [Global Biodiversity Information Facility (GBIF)](https://www.gbif.org) Backbone Taxonomy. Data is accessed via the public GBIF Species API and licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Attribution: *GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei*.
-- **AI Inference:** Meta Model API (`muse-spark-1.3`).
-- **Data Policy:** For detailed information on external data handling, refer to `Vivédex Data Licensing and Provenance Policy.md`.
+Vivédex includes an automated regression test suite containing 98 tests across 8 modules:
+
+```powershell
+# Run the complete test suite
+py -3 -m pytest -v
+```
+
+Test coverage includes:
+- Multimodal backend inference and fallback fixtures (`tests/test_backend.py`)
+- API credentials, BYOK isolation, and masking (`tests/test_api_credentials.py`)
+- Authentication, PBKDF2 hashing, and role checks (`tests/test_security.py`)
+- Domain services, collections, quests, and passports (`tests/test_platform.py`)
+- UI rendering and navigation routes (`tests/test_ui.py`, `tests/test_ui_experience.py`)
+- Product QA defect remediation across 10 defect areas (`tests/test_product_qa.py`)
 
 ---
 
-## 8. Limitations & Privacy Notes
+## 7. Data Licensing and Attribution
 
-- **Candidate Results:** Identifications generated by AI models are suggestions, not expert determinations. They should not be used as authoritative medical, agricultural, or ecological decisions.
-- **Privacy:** Images uploaded to Vivédex are processed strictly in volatile memory; EXIF location tags and camera metadata are stripped before external transmission. Images are never written to permanent disk storage or shared.
+- **GBIF Backbone Taxonomy:** GBIF Secretariat (2023). GBIF Backbone Taxonomy. Checklist dataset. https://doi.org/10.15468/39omei. Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- **Meta Model API:** `muse-spark-1.3` inference endpoint used in accordance with Meta developer terms.
+- **For full licensing details:** See [`DATA_SOURCES_AND_ATTRIBUTION.md`](DATA_SOURCES_AND_ATTRIBUTION.md).
+
+---
+
+## 8. Limitations and Security Notes
+
+- **Tentative Determination:** Identifications are machine-learning suggestions and must not be used for medical, toxicological, or edible foraging decisions.
+- **Local Prototype Scope:** Current v0.1.0 release is configured as a standalone workstation platform. Distributed clustering and cloud synchronization are planned for future phases.
