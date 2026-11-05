@@ -441,6 +441,30 @@ class AuthService:
                 is_active=bool(row["is_active"]),
             )
 
+    def update_password(self, user_id: int, new_password: str) -> None:
+        """Update a user's password with fresh cryptographic salt and PBKDF2 hash."""
+        if len(new_password) < 8:
+            raise AuthenticationError("Password must be at least 8 characters long.")
+        new_salt = generate_salt()
+        new_hash = hash_password(new_password, new_salt)
+        now = utc_now_iso()
+        with self.db.connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE users SET password_hash = ?, salt = ?
+                WHERE id = ?;
+                """,
+                (new_hash, new_salt, user_id),
+            )
+            cursor.execute(
+                """
+                INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, timestamp)
+                VALUES (?, 'PASSWORD_UPDATED', 'USER', ?, 'User updated password', ?);
+                """,
+                (user_id, str(user_id), now),
+            )
+
     @staticmethod
     def require_role(user: AuthenticatedUser | None, required_role: str) -> None:
         """Enforce role permissions on an operation. Raises AuthorizationError if unauthorized."""

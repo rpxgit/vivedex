@@ -183,3 +183,16 @@ $$\text{Discover} \longrightarrow \text{Identify} \longrightarrow \text{Verify} 
 - **Fluid Layouts:** Uses Streamlit `layout="wide"` with responsive column distribution (`st.columns([1, 1])` or `st.columns([3, 1])`).
 - **Contrast Ratios:** Text color `--ink` (`#252C27`) against `--paper` (`#FCFAF4`) yields contrast ratio $> 13:1$ (exceeding WCAG AAA).
 - **Responsive Media:** Images use `width="stretch"` to adapt fluidly to laptop and desktop screens without horizontal overflow.
+
+
+---
+
+## 8. Account Settings & AI Provider Specification (BYOK)
+
+### 8.1 Interface Workflow
+The **Account Settings** page (`/settings`) implements a dedicated Bring Your Own Key (BYOK) experience:
+1. **Instructional Onboarding:** Clear guidance with safe external links to the [Meta Model API Dashboard](https://dev.meta.ai/) and [Quickstart Documentation](https://dev.meta.ai/docs/quickstart).
+2. **Password-Style Entry:** Masked input field with show/hide toggle, automated whitespace trimming, and empty submission rejection.
+3. **Session-Only Memory Disclosure:** Explicit banner clarifying that keys reside exclusively in volatile server-side session memory and are never persisted to SQLite, user accounts, or disk.
+4. **Live Verification:** Built-in "Test Connection" action sending a text-only ping (`Reply with exactly: VIVEDEX_API_CONNECTION_OK`) to verify endpoint responsiveness and display verified model (`muse-spark-1.3`).
+5. **Key Management Controls:** Disconnect (clears session memory) and Replace API Key.

@@ -16,12 +16,17 @@ class VivedexBackend:
         self.meta_adapter = meta_adapter or MetaAPIAdapter()
         self.gbif_adapter = gbif_adapter or GBIFAdapter()
 
-    def process_observation(self, image_bytes: bytes, mime_type: str) -> VivedexResult:
+    def process_observation(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        api_key: Optional[str] = None,
+    ) -> VivedexResult:
         """
         Execute the full MVP pipeline:
         1. Validate format & size.
         2. Preprocess and strip EXIF in-memory.
-        3. Query Meta Model API for candidate identification.
+        3. Query Meta Model API for candidate identification (using explicit user key or env fallback).
         4. Reconcile candidate scientific name with GBIF Backbone Taxonomy.
         5. Return consolidated VivedexResult keeping model proposal and GBIF match separate.
         """
@@ -32,7 +37,7 @@ class VivedexBackend:
         clean_bytes, clean_mime = preprocess_image(image_bytes)
 
         # 3. Meta Model API identification
-        model_result = self.meta_adapter.identify_image(clean_bytes, clean_mime)
+        model_result = self.meta_adapter.identify_image(clean_bytes, clean_mime, api_key=api_key)
 
         # 4. Taxonomic verification with GBIF
         gbif_result = None

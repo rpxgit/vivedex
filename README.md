@@ -49,9 +49,10 @@ The platform interface features a light botanical editorial design with verified
 ### 👤 Science & Identity (ORCID Inspired)
 11. **Researcher Passport:** Persistent Contributor ID (`VDX-XXXXXX`), institutional affiliations, research interests, and research outputs (datasets, publications, checklists) with transparent provenance states (`SELF_REPORTED`, `SOURCE_LINKED`, `PLATFORM_REVIEWED`, `EXTERNALLY_VERIFIED`).
 12. **Taxonomic Knowledge Graph:** Interactive SQLite-backed taxonomic knowledge graph with lineage trees, child nodes, and connected sightings.
+13. **Account Settings:** Bring Your Own Key (BYOK) Meta Model API configuration, connection testing, session-isolated memory storage, account credentials, and privacy safeguards.
 
 ### 🛡️ Governance (Role-Gated)
-13. **Admin Console:** Role-protected console with platform metrics, user directory, observation moderation queue, and security audit logs.
+14. **Admin Console:** Role-protected console with platform metrics, user directory, observation moderation queue, and security audit logs.
 
 ---
 
@@ -106,16 +107,28 @@ cd vivedex
 pip install -r requirements.txt
 ```
 
-### Configuration
-Copy `.env.example` to `.env` or set the environment variable directly:
-```powershell
-# Windows PowerShell
-$env:MODEL_API_KEY = "your_meta_model_api_key_here"
+### Configuration & Bring Your Own Key (BYOK)
 
-# Linux / macOS
-export MODEL_API_KEY="your_meta_model_api_key_here"
-```
-*Note:* If no key is set, Vivédex displays an environment warning banner and provides a **Demo Fixture Mode** toggle to test the complete identification workflow offline.
+Vivédex supports both Bring Your Own Key (BYOK) user connections and operator environment configurations:
+
+1. **User Key (BYOK — Recommended):**
+   - Authenticated users can open **Account Settings** (`/settings`), follow instructions to generate a key at [dev.meta.ai](https://dev.meta.ai/), and connect their personal key.
+   - **Session-Only Memory Storage:** User keys are stored strictly in volatile server session memory for the duration of the active session. Keys are never saved to SQLite, user profile records, observations, or export files.
+   - Includes a built-in **Test Connection** tool verifying `muse-spark-1.3` endpoint responsiveness.
+
+2. **Operator Environment Key:**
+   - Operators can optionally configure a global default key via `.env` or system environment variables:
+     ```powershell
+     # Windows PowerShell
+     $env:MODEL_API_KEY = "your_meta_model_api_key_here"
+
+     # Linux / macOS
+     export MODEL_API_KEY="your_meta_model_api_key_here"
+     ```
+   - Whenever an authenticated user connects their personal key, **My Meta API Key** takes priority over any application-provided key.
+
+3. **Demo Fixture Mode:**
+   - If neither a user key nor an operator key is configured, Vivédex defaults to **Demo Fixture Mode**, enabling full exploration using pre-recorded reference specimen data.
 
 ---
 

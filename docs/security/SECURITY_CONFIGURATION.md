@@ -122,3 +122,30 @@ Specimen photographs uploaded to the application must comply with the following 
 
 - Current prototype stores coarse locality descriptions (`coarse_location`) and rejects precise GPS coordinates.
 - For future GPS-enabled deployments, observations matching vulnerable, threatened, or endangered species (IUCN Red List Categories CR, EN, VU) must automatically apply coordinate fuzzing to a minimum 10 km grid before publication.
+
+
+---
+
+## 10. Bring Your Own Key (BYOK) Credential Security (SEC-BYOK)
+
+Vivédex implements a zero-persistence Bring Your Own Key (BYOK) architecture for Meta Model API credentials:
+
+### 10.1 Memory-Only Credential Lifecycle
+- **Volatile Session Storage:** User-provided API keys reside exclusively in server-side Streamlit session state (`st.session_state["user_meta_api_key"]`).
+- **Zero Database Persistence:** User keys are strictly prohibited from SQLite storage. No database tables (`users`, `user_profiles`, `observations`, `audit_logs`) contain columns or values for user API keys.
+- **Zero Disk and File Persistence:** Keys are never written to `.env`, temporary files, local caches, cookies, or browser local storage.
+- **Session Cleanup:** User keys and connection state are immediately purged on user disconnect or session logout.
+
+### 10.2 Per-Request Isolation & Precedence
+- **Direct Parameter Passing:** The backend routes credentials explicitly: `backend.process_observation(..., api_key=user_key)`.
+- **No Global Client Mutation:** The singleton `MetaAPIAdapter` does not store the user's key on the instance or set process environment variables (`os.environ["MODEL_API_KEY"]` is never overwritten by user input).
+- **Precedence Hierarchy:**
+  1. `My Meta API Key` (User-supplied session key) takes highest priority for that user's observations.
+  2. `Application-Provided Key` (Operator environment variable `MODEL_API_KEY`) serves as platform fallback when no user key is connected.
+  3. `Demo Fixture Mode` serves as offline deterministic fallback when no credentials are present.
+- **Zero Cross-User Leakage:** A user's session key is isolated to that user's active session and is never accessible to concurrent sessions.
+
+### 10.3 Key Masking and Error Sanitization
+- **Key Masking:** The UI displays only masked hints (e.g. `••••••••••••••••••••...cdef`) and never displays the full key string after entry.
+- **Log and Exception Sanitization:** Error handling strips authorization headers and bearer tokens from exception strings and log messages.
+- **Minimal Text-Only Test Verification:** Connection testing issues a minimal text prompt (`Reply with exactly: VIVEDEX_API_CONNECTION_OK`) to verify the endpoint without transmitting specimen photographs.

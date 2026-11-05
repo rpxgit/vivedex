@@ -196,3 +196,26 @@ The knowledge graph is modeled in SQLite using relational tables (`taxa`, `taxon
 - **Local Prototype Authentication:** Session authentication operates in-memory within the Streamlit runtime. It is not hardened for multi-tenant internet deployment with OAuth or JWT.
 - **API Rate Limiting:** Live Meta Model API and GBIF API calls depend on external network availability and upstream service quotas.
 
+
+---
+
+## 8. Bring Your Own Key (BYOK) Architecture
+
+Vivédex provides a Bring Your Own Key (BYOK) integration for the Meta Model API (Muse Spark):
+
+### 8.1 Dedicated Account Settings Page (`/settings`)
+Authenticated naturalists can configure personal AI provider credentials through a dedicated multi-tab settings interface:
+- **AI Provider Settings:** Connect, test, replace, and disconnect personal Meta Model API keys.
+- **Account Information:** Display name, username, Contributor ID (`VDX-XXXXXX`), and assigned role.
+- **Security:** Password management and session controls.
+- **Privacy Safeguards:** Explanations of volatile session storage, metadata stripping, and zero image retention.
+
+### 8.2 Credential Precedence Policy
+1. **User Key (`My Meta API Key`):** An explicitly connected key in `st.session_state["user_meta_api_key"]` takes highest priority for all observations submitted by that user.
+2. **Operator Key (`Application-Provided Key`):** Environment variable `MODEL_API_KEY` serves as fallback when no personal key is connected.
+3. **Demo Fixture Mode:** Deterministic pre-recorded specimen data is used when no credentials are configured or when fixture mode is explicitly checked.
+
+### 8.3 In-Memory Volatile Isolation
+- User keys are never persisted to SQLite, user profile rows, observation records, or export files.
+- Keys are never written to `.env`, filesystem caches, or browser storage.
+- Disconnecting or logging out immediately purges the key and verification state from memory.

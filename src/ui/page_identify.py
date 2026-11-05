@@ -41,12 +41,30 @@ def render_identify_page(
     # Privacy Safeguard Notice
     render_privacy_notice()
 
-    # API Key Configuration Check
-    has_api_key = bool(os.getenv("MODEL_API_KEY") or os.getenv("META_API_KEY"))
-    if not has_api_key:
+    # API Key Configuration & BYOK Check
+    user_key: str | None = st.session_state.get("user_meta_api_key")
+    env_key: str | None = os.getenv("MODEL_API_KEY") or os.getenv("META_API_KEY")
+
+    if user_key:
+        active_api_key = user_key
+        has_api_key = True
+        st.success(
+            "🟢 **Meta Muse Spark Connected** — Using personal Meta API key (Model: `muse-spark-1.3`). "
+            "Live organism identification is active."
+        )
+    elif env_key:
+        active_api_key = env_key
+        has_api_key = True
+        st.info(
+            "🔵 **Application-Provided Meta Connection Available** — Using operator-configured environment key "
+            "(Model: `muse-spark-1.3`). You can connect your own personal key in [Account Settings](/settings)."
+        )
+    else:
+        active_api_key = None
+        has_api_key = False
         st.warning(
-            "⚠️ **Meta API Key Not Configured:** `MODEL_API_KEY` was not found in your environment. "
-            "Vivédex is operating in **Demo Fixture Mode** using pre-recorded reference specimen data."
+            "⚠️ **Connect Meta Model API to enable live identification:** No personal or application API key is configured. "
+            "Connect your key in [Account Settings](/settings) or enable **Demo Fixture Mode** below to explore with pre-recorded reference specimen data."
         )
 
     # -------------------------------------------------------------------------
@@ -96,12 +114,16 @@ def render_identify_page(
             raw_bytes = uploaded_file.getvalue()
             mime_type = uploaded_file.type or "image/jpeg"
 
+            if not use_fixture and not active_api_key:
+                st.error("❌ Cannot perform live analysis without an API key. Please connect your Meta Model API key in Account Settings or select 'Demo Fixture Mode'.")
+                return
+
             with st.spinner("Analysing visible traits with Meta Muse Spark..."):
                 try:
                     if use_fixture:
                         result: VivedexResult = get_demo_fixture_result()
                     else:
-                        result = backend.process_observation(raw_bytes, mime_type)
+                        result = backend.process_observation(raw_bytes, mime_type, api_key=active_api_key)
 
                     st.session_state["last_identification_result"] = result
                     st.session_state["last_is_fixture"] = use_fixture

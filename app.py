@@ -41,6 +41,7 @@ from src.ui.page_organisations import render_organisations_page
 from src.ui.page_profile import render_profile_page
 from src.ui.page_quests import render_quests_page
 from src.ui.page_search import render_search_page
+from src.ui.page_settings import render_settings_page
 from src.ui.page_sites_projects import render_sites_projects_page
 
 # Page Configuration
@@ -135,6 +136,9 @@ def view_profile() -> None:
 def view_knowledge() -> None:
     render_knowledge_page(db, kg_service)
 
+def view_settings() -> None:
+    render_settings_page(db, auth_service, backend.meta_adapter)
+
 def view_admin() -> None:
     render_admin_page(db, admin_service)
 
@@ -154,6 +158,7 @@ p_achievements = st.Page(view_achievements, title="Milestone Badges", icon="🏆
 
 p_profile = st.Page(view_profile, title="Researcher Passport", icon="👤", url_path="passport")
 p_knowledge = st.Page(view_knowledge, title="Taxonomic Knowledge", icon="🕸️", url_path="knowledge")
+p_settings = st.Page(view_settings, title="Account Settings", icon="⚙️", url_path="settings")
 
 nav_sections: dict[str, list[st.Page]] = {
     "Discover & Catalog": [
@@ -175,6 +180,7 @@ nav_sections: dict[str, list[st.Page]] = {
     "Science & Identity": [
         p_profile,
         p_knowledge,
+        p_settings,
     ],
 }
 

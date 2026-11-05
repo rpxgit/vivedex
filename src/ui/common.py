@@ -137,6 +137,11 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
             st.session_state["active_user_id"] = None
             st.session_state["last_activity_timestamp"] = None
             st.session_state["selected_taxon_id"] = None
+            # Zero-leakage credential clearing (SEC-BYOK)
+            st.session_state.pop("user_meta_api_key", None)
+            st.session_state.pop("user_meta_connection_status", None)
+            st.session_state.pop("user_meta_connection_msg", None)
+            st.session_state.pop("settings_show_replace_form", None)
             st.sidebar.success("Logged out successfully.")
             st.rerun()
     else:
