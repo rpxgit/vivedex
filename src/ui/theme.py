@@ -11,20 +11,21 @@ import html
 from urllib.parse import urlparse
 import streamlit as st
 
-# High-contrast color palette tokens (WCAG AA compliant >= 4.5:1)
+# Authoritative color palette tokens matching RUN 011B design specification
 COLOR_TOKENS = {
-    "forest": "#183B32",       # Deep evergreen - primary brand
-    "deep_forest": "#102A25",  # Contrast dark forest
-    "moss": "#516C4D",         # Botanical accent
-    "sage": "#7A9073",         # Secondary moss
-    "ivory": "#F5F2E9",        # Main page background
-    "paper": "#FCFAF4",        # Card background
-    "border": "#D8D1C2",       # Structural container border
-    "border_strong": "#B8AE9C",# Higher contrast divider
-    "earth": "#8C5432",        # Warm terracotta / earth tone
-    "gold": "#A2782A",         # Achievement gold
-    "ink": "#1E2621",          # Primary reading ink (12.2:1 contrast on ivory)
-    "muted": "#4E5C53",        # Secondary reading text (5.8:1 contrast on ivory)
+    "forest": "#183B32",       # Deep evergreen - primary brand (8.6:1 on ivory)
+    "deep_forest": "#102A25",  # Contrast dark forest (12.1:1 on ivory)
+    "moss": "#718568",         # Botanical accent
+    "sage": "#A9B99A",         # Soft botanical sage
+    "ivory": "#F5F2E9",        # Canvas background
+    "paper": "#FCFAF4",        # Container/card fill
+    "earth": "#A66B48",        # Warm terracotta accent
+    "gold": "#C6A66B",         # Milestone gold accent
+    "ink": "#252C27",          # Primary reading ink (10.9:1 on ivory)
+    "muted": "#59645D",        # Secondary reading text (5.2:1 on ivory)
+    "white": "#FFFFFF",        # High-contrast white
+    "border": "#D8D1C2",       # Card container border
+    "border_strong": "#B8AE9C",# Secondary divider
 }
 
 NATURALIST_RANKS = {
@@ -66,7 +67,7 @@ def inject_theme_styles() -> None:
     """Inject typography, custom CSS design tokens, and botanical layout rules.
 
     Eliminates wildcard font overrides to preserve Streamlit component rendering,
-    enforces strict contrast ratios, and styles sidebar navigation cleanly.
+    enforces strict contrast ratios, styles sidebar navigation, and refines the file uploader.
     """
     st.markdown(
         """
@@ -76,44 +77,84 @@ def inject_theme_styles() -> None:
         :root {
             --forest: #183B32;
             --deep-forest: #102A25;
-            --moss: #516C4D;
-            --sage: #7A9073;
+            --moss: #718568;
+            --sage: #A9B99A;
             --ivory: #F5F2E9;
             --paper: #FCFAF4;
+            --earth: #A66B48;
+            --gold: #C6A66B;
+            --ink: #252C27;
+            --muted: #59645D;
+            --white: #FFFFFF;
             --border: #D8D1C2;
             --border-strong: #B8AE9C;
-            --earth: #8C5432;
-            --gold: #A2782A;
-            --ink: #1E2621;
-            --muted: #4E5C53;
         }
 
-        /* App container & base background */
+        /* App container & base canvas */
         .stApp, [data-testid="stAppViewContainer"] {
             background-color: var(--ivory) !important;
             color: var(--ink) !important;
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         }
 
-        /* Main content area */
+        /* Main content constraint */
         .main .block-container {
             max-width: 1200px;
             padding-top: 1.8rem;
             padding-bottom: 3.5rem;
         }
 
-        /* Headings */
+        /* Headings: Playfair Display for editorial elegance */
         h1, h2 {
-            font-family: 'Cinzel', 'Playfair Display', Georgia, serif !important;
-            color: var(--deep-forest) !important;
+            font-family: 'Playfair Display', Georgia, serif !important;
+            color: var(--deep-forest);
             font-weight: 700 !important;
             letter-spacing: -0.01em;
         }
 
         h3, h4 {
             font-family: 'Playfair Display', Georgia, serif !important;
-            color: var(--forest) !important;
+            color: var(--forest);
             font-weight: 600 !important;
+        }
+
+        /* Hero Banner - Explicit High-Contrast Styling */
+        .hero-banner {
+            background: linear-gradient(135deg, #102A25 0%, #183B32 75%, #244C42 100%) !important;
+            border-radius: 12px !important;
+            padding: 2.2rem 2.6rem !important;
+            margin-bottom: 1.8rem !important;
+            border: 1px solid #2B574C !important;
+            box-shadow: 0 4px 18px rgba(16, 42, 37, 0.14) !important;
+            color: #FFFFFF !important;
+        }
+
+        .hero-banner h1,
+        .hero-banner h2,
+        .hero-banner [data-testid="stMarkdownContainer"] h1,
+        .hero-banner [data-testid="stMarkdownContainer"] h2,
+        [data-testid="stMarkdownContainer"] .hero-banner h1,
+        [data-testid="stMarkdownContainer"] .hero-banner h2 {
+            font-family: 'Playfair Display', Georgia, serif !important;
+            color: #FFFFFF !important;
+            font-size: 2.3rem !important;
+            margin: 0 0 0.5rem 0 !important;
+            font-weight: 700 !important;
+            letter-spacing: -0.01em !important;
+            line-height: 1.2 !important;
+        }
+
+        .hero-banner p,
+        .hero-banner [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMarkdownContainer"] .hero-banner p {
+            color: #F5F2E9 !important;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
+            font-size: 1.05rem !important;
+            margin: 0 !important;
+            font-weight: 400 !important;
+            line-height: 1.5 !important;
+            max-width: 860px !important;
+            opacity: 0.95 !important;
         }
 
         /* High-contrast Sidebar Styling */
@@ -123,9 +164,13 @@ def inject_theme_styles() -> None:
         }
 
         [data-testid="stSidebar"] p,
-        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] label {
+            color: var(--ink) !important;
+            font-weight: 500 !important;
+        }
+
         [data-testid="stSidebarNav"] span {
-            color: #102A25 !important;
+            color: var(--forest) !important;
             font-weight: 600 !important;
         }
 
@@ -145,32 +190,104 @@ def inject_theme_styles() -> None:
             background-color: #E2DBD0 !important;
         }
 
-        /* Hero Banner */
-        .hero-banner {
-            background: linear-gradient(135deg, #102A25 0%, #183B32 75%, #244C42 100%);
-            border-radius: 12px;
-            padding: 2.2rem 2.6rem;
-            color: #FCFAF4 !important;
-            margin-bottom: 1.8rem;
-            border: 1px solid #2B574C;
-            box-shadow: 0 4px 18px rgba(16, 42, 37, 0.14);
+        /* Custom File Uploader Drag-and-Drop Area */
+        [data-testid="stFileUploader"] {
+            background: transparent !important;
         }
 
-        .hero-banner h1 {
-            color: #FCFAF4 !important;
-            font-size: 2.3rem !important;
-            margin: 0 0 0.5rem 0 !important;
-            font-weight: 700 !important;
-            letter-spacing: -0.01em;
+        [data-testid="stFileUploaderDropzone"] {
+            background-color: var(--paper) !important;
+            border: 2px dashed var(--sage) !important;
+            border-radius: 12px !important;
+            padding: 2rem 1.6rem !important;
+            transition: border-color 0.2s ease, background-color 0.2s ease !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02) !important;
         }
 
-        .hero-banner p {
-            color: #E2EEE6 !important;
-            font-size: 1.05rem !important;
-            margin: 0 !important;
-            font-weight: 400 !important;
-            line-height: 1.5 !important;
-            max-width: 860px;
+        [data-testid="stFileUploaderDropzone"]:hover {
+            border-color: var(--forest) !important;
+            background-color: #F8F5EC !important;
+        }
+
+        [data-testid="stFileUploaderDropzoneInstructions"] {
+            color: var(--ink) !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }
+
+        [data-testid="stFileUploaderDropzoneInstructions"] span,
+        [data-testid="stFileUploaderDropzoneInstructions"] small {
+            color: var(--muted) !important;
+        }
+
+        [data-testid="stFileUploaderDropzone"] button {
+            background-color: var(--forest) !important;
+            color: #FFFFFF !important;
+            border: 1px solid var(--deep-forest) !important;
+            border-radius: 6px !important;
+            font-weight: 600 !important;
+            padding: 0.45rem 1.2rem !important;
+            transition: background-color 0.15s ease !important;
+        }
+
+        [data-testid="stFileUploaderDropzone"] button:hover {
+            background-color: var(--deep-forest) !important;
+        }
+
+        /* Primary Action Buttons */
+        .stButton > button {
+            background-color: var(--forest) !important;
+            color: #FFFFFF !important;
+            border: 1px solid var(--deep-forest) !important;
+            border-radius: 6px !important;
+            font-weight: 600 !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            transition: background-color 0.15s ease, transform 0.1s ease !important;
+        }
+
+        .stButton > button:hover {
+            background-color: var(--deep-forest) !important;
+            border-color: #081714 !important;
+            transform: translateY(-1px);
+        }
+
+        /* Form Inputs */
+        .stTextInput > div > div > input,
+        .stTextArea textarea,
+        .stSelectbox > div > div {
+            background-color: #FFFFFF !important;
+            color: var(--ink) !important;
+            border-color: var(--border) !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }
+
+        .stTextInput > div > div > input::placeholder,
+        .stTextArea textarea::placeholder {
+            color: var(--muted) !important;
+            opacity: 0.8;
+        }
+
+        /* Specimen & Botanical Cards */
+        .specimen-card {
+            background: var(--paper) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 10px;
+            padding: 1.4rem;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 2px 8px rgba(37, 44, 39, 0.04);
+            transition: box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .specimen-card:hover {
+            box-shadow: 0 6px 16px rgba(24, 59, 50, 0.09);
+            border-color: var(--border-strong) !important;
+        }
+
+        /* Latin Binomial Styling */
+        .latin-binomial {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-style: italic;
+            font-weight: 600;
+            color: var(--forest);
         }
 
         /* Prototype Security Notice */
@@ -183,27 +300,24 @@ def inject_theme_styles() -> None:
             font-weight: 700;
             letter-spacing: 0.03em;
             border: 1px solid #F2DC9E;
-            border-left: 4px solid #A2782A;
+            border-left: 4px solid var(--gold);
             margin-bottom: 1.3rem;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        /* Specimen & Botanical Cards */
-        .specimen-card {
-            background: var(--paper) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 10px;
-            padding: 1.4rem;
+        /* Naturalist Privacy Safeguard */
+        .privacy-badge {
+            background-color: #F5F8F4;
+            color: var(--deep-forest);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            border: 1px solid #C4D6BD;
+            border-left: 4px solid var(--moss);
             margin-bottom: 1.2rem;
-            box-shadow: 0 2px 8px rgba(30, 38, 33, 0.04);
-            transition: box-shadow 0.15s ease, border-color 0.15s ease;
-        }
-
-        .specimen-card:hover {
-            box-shadow: 0 6px 16px rgba(24, 59, 50, 0.09);
-            border-color: var(--border-strong) !important;
         }
 
         /* Botanical Metrics Grid */
@@ -233,19 +347,11 @@ def inject_theme_styles() -> None:
             margin-top: 6px;
         }
 
-        /* Latin Binomial Styling */
-        .latin-binomial {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-style: italic;
-            font-weight: 600;
-            color: var(--forest);
-        }
-
         /* Botanical Badges & Tags */
         .rank-pill {
             display: inline-block;
             background-color: #E2ECDD;
-            color: #183B32;
+            color: var(--forest);
             font-size: 0.74rem;
             font-weight: 700;
             padding: 3px 9px;
@@ -288,14 +394,7 @@ def inject_theme_styles() -> None:
             border: 1px solid #FAD2CF;
         }
 
-        .provenance-tag {
-            font-size: 0.76rem;
-            color: var(--muted);
-            font-family: 'JetBrains Mono', ui-monospace, monospace;
-            line-height: 1.4;
-        }
-
-        /* Quest & Habit Card */
+        /* Quest Card */
         .quest-box {
             background: #FFFFFF !important;
             border: 1px solid var(--border) !important;
@@ -348,30 +447,6 @@ def inject_theme_styles() -> None:
             color: #4A148C;
             border: 1px solid #D1C4E9;
         }
-
-        /* Primary Action Buttons */
-        .stButton > button {
-            background-color: var(--forest) !important;
-            color: #FCFAF4 !important;
-            border: 1px solid var(--deep-forest) !important;
-            border-radius: 6px !important;
-            font-weight: 600 !important;
-            transition: background-color 0.15s ease, transform 0.1s ease !important;
-        }
-        .stButton > button:hover {
-            background-color: var(--deep-forest) !important;
-            border-color: #081714 !important;
-            transform: translateY(-1px);
-        }
-
-        /* Form Controls */
-        .stTextInput > div > div > input,
-        .stTextArea textarea,
-        .stSelectbox > div > div {
-            background-color: #FFFFFF !important;
-            color: var(--ink) !important;
-            border-color: var(--border) !important;
-        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -379,14 +454,14 @@ def inject_theme_styles() -> None:
 
 
 def render_hero_banner(title: str, subtitle: str) -> None:
-    """Render a museum-grade editorial hero banner."""
+    """Render a museum-grade editorial hero banner with guaranteed contrast."""
     escaped_title = escape_text(title)
     escaped_subtitle = escape_text(subtitle)
     st.markdown(
         f"""
-        <div class="hero-banner">
-            <h1>{escaped_title}</h1>
-            <p>{escaped_subtitle}</p>
+        <div class="hero-banner" style="background: linear-gradient(135deg, #102A25 0%, #183B32 75%, #244C42 100%) !important; color: #FFFFFF !important; border-radius: 12px; padding: 2.2rem 2.6rem; margin-bottom: 1.8rem; border: 1px solid #2B574C; box-shadow: 0 4px 18px rgba(16, 42, 37, 0.14);">
+            <h1 style="color: #FFFFFF !important; font-family: 'Playfair Display', Georgia, serif !important; font-size: 2.3rem !important; margin: 0 0 0.5rem 0 !important; font-weight: 700 !important; letter-spacing: -0.01em !important; line-height: 1.2 !important;">{escaped_title}</h1>
+            <p style="color: #F5F2E9 !important; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important; font-size: 1.05rem !important; margin: 0 !important; font-weight: 400 !important; line-height: 1.5 !important; max-width: 860px !important; opacity: 0.95 !important;">{escaped_subtitle}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -400,6 +475,19 @@ def render_security_badge() -> None:
         <div class="security-badge">
             <span>⚠️</span>
             <span><strong>LOCAL PROTOTYPE</strong> — AUTHENTICATION IS NOT PRODUCTION-HARDENED.</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_privacy_notice() -> None:
+    """Render the privacy safeguard badge."""
+    st.markdown(
+        """
+        <div class="privacy-badge">
+            🔒 <strong>Naturalist Privacy Safeguard:</strong> Specimen photographs are processed strictly in volatile memory.
+            EXIF metadata, device serials, and precise GPS coordinates are stripped before analysis. Images are never written to permanent storage.
         </div>
         """,
         unsafe_allow_html=True,

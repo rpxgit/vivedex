@@ -99,6 +99,24 @@ class TestExperienceOverhaul(unittest.TestCase):
             contrast_muted, 4.5, f"Muted text contrast ratio {contrast_muted:.2f} is below 4.5:1"
         )
 
+        contrast_white_forest = calculate_contrast_ratio(COLOR_TOKENS["white"], COLOR_TOKENS["forest"])
+        self.assertGreaterEqual(
+            contrast_white_forest, 4.5, f"White on forest contrast ratio {contrast_white_forest:.2f} is below 4.5:1"
+        )
+
+        contrast_hero_title = calculate_contrast_ratio(COLOR_TOKENS["white"], COLOR_TOKENS["deep_forest"])
+        self.assertGreaterEqual(
+            contrast_hero_title, 4.5, f"Hero title on deep forest contrast {contrast_hero_title:.2f} is below 4.5:1"
+        )
+
+    def test_streamlit_upload_limit_config(self) -> None:
+        """Verify that .streamlit/config.toml pins maxUploadSize to 8 MB."""
+        root = Path(__file__).resolve().parent.parent
+        cfg_file = root / ".streamlit" / "config.toml"
+        self.assertTrue(cfg_file.exists())
+        content = cfg_file.read_text(encoding="utf-8")
+        self.assertIn("maxUploadSize = 8", content)
+
     # -------------------------------------------------------------------------
     # 2. Ecological Hierarchy & Species Richness
     # -------------------------------------------------------------------------

@@ -103,7 +103,7 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
                 <div style="font-family: 'Cinzel', serif; font-size: 1.45rem; font-weight: 700; color: #183B32;">🌿 Vivédex</div>
                 <div>{env_badge}</div>
             </div>
-            <div style="font-size: 0.76rem; color: #4E5C53; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-top: 2px;">Biodiversity Platform</div>
+            <div style="font-size: 0.76rem; color: #59645D; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-top: 2px;">Biodiversity Platform</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -123,10 +123,10 @@ def render_auth_controls(auth_service: AuthService, db: Database) -> None:
         st.sidebar.markdown(
             f"""
             <div style="background: #FFFFFF; border: 1px solid #D8D1C2; border-radius: 8px; padding: 12px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                <div style="font-size: 0.74rem; text-transform: uppercase; color: #4E5C53; font-weight: 700;">Field Naturalist</div>
+                <div style="font-size: 0.74rem; text-transform: uppercase; color: #59645D; font-weight: 700;">Field Naturalist</div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #183B32; margin-top: 2px;">{safe_display_name}</div>
-                <div style="font-size: 0.82rem; color: #8C5432; font-weight: 600; margin-top: 2px;">Level {stats.level} &bull; {escape_text(rank_title)} ({stats.total_xp} XP)</div>
-                <div style="font-size: 0.74rem; color: #4E5C53; font-family: monospace; margin-top: 4px;">ID: {safe_vivedex_id} &bull; {safe_role}</div>
+                <div style="font-size: 0.82rem; color: #A66B48; font-weight: 600; margin-top: 2px;">Level {stats.level} &bull; {escape_text(rank_title)} ({stats.total_xp} XP)</div>
+                <div style="font-size: 0.74rem; color: #59645D; font-family: monospace; margin-top: 4px;">ID: {safe_vivedex_id} &bull; {safe_role}</div>
             </div>
             """,
             unsafe_allow_html=True,

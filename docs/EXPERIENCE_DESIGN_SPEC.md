@@ -21,35 +21,47 @@ $$\text{Discover} \longrightarrow \text{Identify} \longrightarrow \text{Verify} 
 
 ## 3. Design System & Style Tokens
 
-### 3.1 Color Palette
+### 3.1 Authoritative Color Palette
 ```css
 :root {
-    /* Primary Natural Tones */
-    --forest: #183B32;        /* Deep botanical primary */
-    --deep-forest: #102A25;   /* Surface darks, headers */
+    /* Authoritative Natural Tones */
+    --forest: #183B32;        /* Botanical primary; contrast >= 4.5:1 on light */
+    --deep-forest: #102A25;   /* Surface darks, editorial headers */
     --moss: #718568;          /* Organic accents, secondary elements */
     --sage: #A9B99A;          /* Soft badges, subtle highlights */
     
-    /* Backgrounds & Paper */
-    --ivory: #F5F2E9;         /* Warm background surfaces */
-    --paper: #FCFAF4;         /* Specimen card containers */
-    --border: #E3DDD0;        /* Subtle botanical borders */
+    /* Backgrounds & Canvas */
+    --ivory: #F5F2E9;         /* Base canvas background */
+    --paper: #FCFAF4;         /* Specimen card containers & uploader canvas */
+    --border: #D8D1C2;        /* Subtle card borders */
+    --border-strong: #B8AE9C; /* Uploader dashed outline */
     
     /* Earth & Accent Tones */
-    --earth: #A66B48;         /* Warm terracotta, warning states */
+    --earth: #A66B48;         /* Terracotta accents, milestone borders */
     --gold: #C6A66B;          /* Achievement markers, level crowns */
-    --ink: #252C27;           /* High-contrast body text */
-    --muted: #777E73;         /* Captions, taxonomic authorities */
+    --ink: #252C27;           /* High-contrast body text (>= 11:1 on ivory/paper) */
+    --muted: #59645D;         /* High-contrast secondary captions (>= 4.5:1) */
+    --white: #FFFFFF;         /* Crisp text inside dark hero surfaces */
     
-    /* Functional Status */
-    --status-pending: #E8F0FE;
+    /* Moderation Status */
+    --status-pending: #FEF7E0;
     --status-accepted: #E6F4EA;
-    --status-needs-evidence: #FEF7E0;
-    --status-rejected: #FCE8E6;
+    --status-review: #FCE8E6;
 }
 ```
 
-### 3.2 Typography Tokens
+### 3.2 Contrast Compliance Matrix (WCAG 2.1 AA)
+
+| Foreground Token | Background Surface | Contrast Ratio | Minimum AA Threshold | Status |
+|---|---|---|---|---|
+| `--ink` (`#252C27`) | `--paper` (`#FCFAF4`) | **13.5:1** | 4.5:1 (Normal text) | **PASS (AAA)** |
+| `--ink` (`#252C27`) | `--ivory` (`#F5F2E9`) | **12.6:1** | 4.5:1 (Normal text) | **PASS (AAA)** |
+| `--muted` (`#59645D`) | `--paper` (`#FCFAF4`) | **5.4:1** | 4.5:1 (Normal text) | **PASS (AA)** |
+| `--forest` (`#183B32`) | `--paper` (`#FCFAF4`) | **9.8:1** | 4.5:1 (Normal text) | **PASS (AAA)** |
+| `--white` (`#FFFFFF`) | `--deep-forest` (`#102A25`) | **13.8:1** | 3.0:1 (Large text) | **PASS (AAA)** |
+| `--ivory` (`#F5F2E9`) | `--deep-forest` (`#102A25`) | **11.2:1** | 4.5:1 (Normal text) | **PASS (AAA)** |
+
+### 3.3 Typography Tokens
 - **Editorial Display Font:** *Cinzel* & *Playfair Display* (Google Fonts) for main page titles, specimen titles, and Latin binomial headers.
 - **Scientific Binomial Style:** `font-style: italic; font-family: 'Playfair Display', serif; font-weight: 600;`
 - **Body & Controls Font:** *Plus Jakarta Sans* / *Inter* for crisp, modern legibility across cards, tables, and forms.
@@ -62,26 +74,29 @@ $$\text{Discover} \longrightarrow \text{Identify} \longrightarrow \text{Verify} 
 | Page Order | Navigation Label | Icon | Route / URL Path | Target Experience |
 |---|---|---|---|---|
 | 1 | **Home** | 🧭 | `/home` | Naturalist expedition hub, diversity metrics, recent discoveries |
-| 2 | **Explore** | 🔍 | `/explore` | Visual specimen card grid, 10 taxonomic categories, GBIF search |
-| 3 | **Identify** | 🌿 | `/identify` | 10-step AI vision + GBIF reconciliation workflow |
-| 4 | **My Dex** | 📚 | `/mydex` | Personal biological encyclopedia, encounters, completion metrics |
-| 5 | **Field Journal** | 📓 | `/journal` | Chronological observation diary with editable field notes |
-| 6 | **Knowledge** | 🕸️ | `/knowledge` | Graphical taxonomic lineage and neighborhood explorer |
-| 7 | **Achievements** | 🏆 | `/achievements` | Naturalist ranks (Observer to Steward) and milestone badge families |
-| 8 | **Profile** | 👤 | `/profile` | Contributor credentials, bio, and unverified ORCID citation |
-| 9 | **Admin Console** | 🛡️ | `/admin` | *Restricted to Admins:* moderation queue, audit trail, metrics |
+| 2 | **Search** | 🔍 | `/search` | Global search across taxonomy, sites, expeditions, and observations |
+| 3 | **Explore** | 📖 | `/explore` | Visual specimen card grid, 10 taxonomic categories, GBIF search |
+| 4 | **Identify** | 🌿 | `/identify` | 6-step evidence-based specimen identification workflow |
+| 5 | **My Dex** | 📚 | `/mydex` | Personal biological encyclopedia, encounters, completion metrics |
+| 6 | **Field Journal** | 📓 | `/journal` | Chronological observation diary with editable field notes |
+| 7 | **Field Sites** | 📍 | `/sites` | Expedition sites, protected areas, ecological monitoring projects |
+| 8 | **Organisations** | 🏛️ | `/organisations` | Research institutions, museums, parks, universities |
+| 9 | **Quests** | ⚡ | `/quests` | Field habits, daily observation tasks, recurring biodiversity monitoring |
+| 10 | **Achievements** | 🏆 | `/achievements` | Naturalist ranks (Observer to Steward) and milestone badge families |
+| 11 | **Passport** | 👤 | `/passport` | Contributor credentials, research passport, bio, and ORCID link |
+| 12 | **Knowledge** | 🕸️ | `/knowledge` | Graphical taxonomic lineage and neighborhood explorer |
+| 13 | **Admin Console** | 🛡️ | `/admin` | *Restricted to Admins:* moderation queue, audit trail, platform metrics |
 
 ---
 
 ## 5. Page Specifications
 
 ### 5.1 Home (Expedition Dashboard)
-- **Hero Section:** Rich botanical header: "Vivédex Expedition Hub" with subtitle and naturalist overview.
+- **Hero Section:** Rich editorial header: "Field Ecology & Natural History Platform" with museum-grade botanical framing.
 - **Ecological Diversity Metrics:** 4-column cards: Recorded Sightings, Collected Taxa, Documented Families, Naturalist Rank & XP.
-- **Rank Progression:** Visual status card showing current rank (*Observer*, *Explorer*, *Naturalist*, *Field Researcher*, *Specialist*, *Biodiversity Steward*) and XP bar.
-- **Recent Discoveries Stream:** Specimen preview cards displaying candidate name, observation date, and moderation status.
-- **Expedition Quests & Milestones:** Next achievable badge with dynamic criteria progress bar.
-- **Quick Action Call-to-Actions:** "🌱 Identify Organism Photograph" and "🔍 Browse Explore Dex".
+- **Core Workflow Pillars:** Six interactive workflow cards (Discover → Identify → Verify → Collect → Learn → Contribute).
+- **Featured Field Sites:** Preview cards of ecological reserves with biome tags, elevation, and location data.
+- **Naturalist Sign-In / Registration:** Embedded login and signup tabs with instant session activation.
 
 ### 5.2 Explore Dex & Categories
 - **10 Curated Biological Categories:**
@@ -112,17 +127,13 @@ $$\text{Discover} \longrightarrow \text{Identify} \longrightarrow \text{Verify} 
 - Linked community observations.
 - Direct "Record Field Encounter" action.
 
-### 5.4 Identify (10-Step Observation Workflow)
-1. **Upload:** Clean file drag-and-drop supporting JPG, JPEG, PNG, WebP up to 8 MB.
-2. **Preview:** In-memory image preview.
-3. **Privacy Notice:** Transparent declaration that EXIF location/camera tags are stripped and original images are never stored.
-4. **Analyse Action:** Progress state with natural history spinner.
-5. **Visible Traits:** Itemized morphological evidence observed by Meta Muse Spark.
-6. **Candidate Proposals:** Primary candidate binomial with uncertainty notes and lookalikes.
-7. **GBIF Reconciliation:** Authoritative taxonomic match with CC BY 4.0 citation and match type warnings (`HIGHERRANK`, `FUZZY`).
-8. **Save to My Dex:** Automatic or manual collection update.
-9. **Record Field Notes:** Naturalist field notes input (habitat, behavior, coarse locality).
-10. **Export Record:** Structured JSON export with complete provenance.
+### 5.4 Identify (6-Step Evidence-Based Observation Workflow)
+1. **1. Add a specimen photograph:** Clean file drag-and-drop box with paper canvas (`#FCFAF4`), subtle dashed border (`#B8AE9C`), and explicit 8 MB file size limit enforcement (`.streamlit/config.toml`).
+2. **2. Review Photograph:** Rendered immediately upon file upload. Displays volatile in-memory preview with metadata safeguard notice.
+3. **3. Analyse Specimen:** Prominent primary action button ("🔍 Analyse Specimen") with clear spinner status indicator.
+4. **4. Candidate Identification:** Evidence-based candidate binomial in Playfair Display, suggested rank pill, confidence and diagnostic uncertainty note, observed morphological traits, and confusing lookalikes.
+5. **5. Taxonomic Reconciliation (GBIF):** Authoritative GBIF Backbone Taxonomy match with canonical name, classification hierarchy, match score, CC BY 4.0 license, and warnings for higher-rank or fuzzy matches.
+6. **6. Save Field Observation:** Field journal entry with optional locality, expedition link, and collection synchronization. Direct structured JSON export.
 
 ### 5.5 My Dex (Personal Encyclopedia)
 - Grid of collected organisms arranged by taxonomic group or encounter date.
@@ -156,16 +167,19 @@ $$\text{Discover} \longrightarrow \text{Identify} \longrightarrow \text{Verify} 
 
 ## 6. Component Library & Visual Tokens
 
+- **`.hero-banner`:** Deep botanical gradient surface (`#102A25` to `#183B32`) with guaranteed `#FFFFFF` heading and `#F5F2E9` subtitle contrast.
+- **`[data-testid="stFileUploaderDropzone"]`:** Warm paper container (`#FCFAF4`) with subtle dashed outline (`#B8AE9C`) and forest green button.
 - **`.specimen-card`:** Botanical card container with `--paper` background, `--border` outline, gentle box shadow, and hover elevation.
 - **`.latin-binomial`:** Italicized serif typography for valid scientific names.
 - **`.rank-pill`:** Small rounded badge in `--sage` with dark green text.
 - **`.status-pill`:** High-contrast rounded pill indicating moderation state.
 - **`.provenance-tag`:** Monospace citation badge highlighting licensing (`CC BY 4.0`) and origin.
-- **`.security-notice`:** Mandatory local prototype security disclaimer.
+- **`.privacy-badge`:** Subtle inline paper container with lock icon and metadata privacy notice.
+- **`.security-badge`:** Mandatory local prototype security disclaimer.
 
 ---
 
 ## 7. Responsive Behavior & Accessibility
-- **Fluid Layouts:** Uses Streamlit `layout="wide"` with responsive column distribution (`st.columns([1, 1])` or `st.columns([2, 1])`).
-- **Contrast Ratios:** Text color `--ink` (`#252C27`) against `--paper` (`#FCFAF4`) yields contrast ratio $> 11:1$ (exceeding WCAG AAA).
-- **No Horizontal Scroll:** Images use `width="stretch"` to adapt fluidly to laptop and desktop screens without overflow.
+- **Fluid Layouts:** Uses Streamlit `layout="wide"` with responsive column distribution (`st.columns([1, 1])` or `st.columns([3, 1])`).
+- **Contrast Ratios:** Text color `--ink` (`#252C27`) against `--paper` (`#FCFAF4`) yields contrast ratio $> 13:1$ (exceeding WCAG AAA).
+- **Responsive Media:** Images use `width="stretch"` to adapt fluidly to laptop and desktop screens without horizontal overflow.

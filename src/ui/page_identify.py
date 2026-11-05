@@ -1,6 +1,6 @@
 """Organism identification workflow integrating Meta Muse Spark and GBIF Backbone Taxonomy.
 
-Features an evidence-based 10-step naturalist observation workflow with in-memory EXIF stripping,
+Features an evidence-based 6-step naturalist observation workflow with in-memory EXIF stripping,
 diagnostic trait inspection, lookalike differentiation, and field journal logging.
 """
 
@@ -19,51 +19,46 @@ from src.image_processor import ImageValidationError
 from src.meta_adapter import MetaAPIConfigurationError, MetaAPIRequestError
 from src.schemas import VivedexResult
 from src.ui.common import inject_custom_styles, render_security_notice
-from src.ui.theme import escape_text, render_hero_banner
+from src.ui.theme import escape_text, render_hero_banner, render_privacy_notice
 
 
 def render_identify_page(
     backend: VivedexBackend,
     collection_service: CollectionService,
 ) -> None:
-    """Render the 10-step naturalist organism identification workflow."""
+    """Render the 6-step naturalist organism identification workflow."""
     inject_custom_styles()
     render_security_notice()
 
     current_user: AuthenticatedUser | None = st.session_state.get("current_user")
 
-    # Banner
+    # Hero Banner (High-contrast, single heading, no marketing jargon)
     render_hero_banner(
-        title="🌿 Identify Organism Photograph",
-        subtitle="10-step observation pipeline: Multimodal vision trait analysis with Meta Muse Spark, reconciled with authoritative GBIF taxonomy.",
+        title="Identify a Specimen",
+        subtitle="Analyse an organism photograph with Meta Muse Spark. Examine visible traits, review candidate identifications and reconcile scientific names with GBIF taxonomy.",
     )
 
-    # Step 3: Privacy Notice
-    st.markdown(
-        """
-        <div style="background: #fbf7ee; border: 1px solid #fae8c3; border-left: 4px solid #A66B48; border-radius: 6px; padding: 10px 14px; margin-bottom: 1.2rem; font-size: 0.85rem; color: #554422;">
-            🔒 <strong>Naturalist Privacy Safeguard:</strong> Uploaded specimen photographs are processed strictly in volatile memory.
-            EXIF metadata, device serials, and precise GPS coordinates are stripped before analysis. Images are never written to permanent storage.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Privacy Safeguard Notice
+    render_privacy_notice()
 
-    # API Key check
+    # API Key Configuration Check
     has_api_key = bool(os.getenv("MODEL_API_KEY") or os.getenv("META_API_KEY"))
     if not has_api_key:
         st.warning(
             "⚠️ **Meta API Key Not Configured:** `MODEL_API_KEY` was not found in your environment. "
-            "You can execute the analysis using the **Demo Fixture Mode** below to test the complete workflow."
+            "Vivédex is operating in **Demo Fixture Mode** using pre-recorded reference specimen data."
         )
 
-    # Step 1: Upload an image
-    col_upload, col_mode = st.columns([3, 1])
+    # -------------------------------------------------------------------------
+    # STEP 1: ADD SPECIMEN PHOTOGRAPH
+    # -------------------------------------------------------------------------
+    st.markdown("### 1. Add a specimen photograph")
+    col_upload, col_mode = st.columns([3, 1], gap="medium")
     with col_upload:
         uploaded_file = st.file_uploader(
-            "Step 1: Upload Specimen Photograph (JPG, JPEG, PNG, WebP — max 8 MB):",
+            "Drag and drop an image here, or browse your files. Supported formats: JPG, PNG and WebP. Maximum file size: 8 MB.",
             type=["jpg", "jpeg", "png", "webp"],
-            help="Select a clear photograph of a wild organism.",
+            help="Supported formats: JPG, PNG, and WebP (up to 8 MB).",
             key="identify_uploader",
         )
     with col_mode:
@@ -75,53 +70,62 @@ def render_identify_page(
             help="Run offline deterministic analysis without live API credentials.",
             key="identify_fixture_toggle",
         )
+        if use_fixture:
+            st.caption("ℹ️ Pre-recorded reference specimen mode active.")
 
-    # Step 2: Preview the image
+    # -------------------------------------------------------------------------
+    # STEP 2: REVIEW PHOTOGRAPH (Only rendered when file uploaded)
+    # -------------------------------------------------------------------------
     if uploaded_file is not None:
-        st.markdown("#### Step 2: Specimen Preview & EXIF Inspection")
+        st.markdown("---")
+        st.markdown("### 2. Review Photograph")
         st.image(uploaded_file, caption="Volatile Memory Specimen Preview", width="stretch")
 
-    # Step 4: Analyse Action Button
-    st.write("")
-    analyze_clicked = st.button(
-        "🔍 Step 4: Execute Naturalist Analysis",
-        type="primary",
-        disabled=(uploaded_file is None),
-        key="identify_run_btn",
-    )
+        # ---------------------------------------------------------------------
+        # STEP 3: ANALYSE SPECIMEN
+        # ---------------------------------------------------------------------
+        st.markdown("---")
+        st.markdown("### 3. Analyse Specimen")
+        analyze_clicked = st.button(
+            "🔍 Analyse Specimen",
+            type="primary",
+            key="identify_run_btn",
+        )
 
-    if analyze_clicked and uploaded_file is not None:
-        raw_bytes = uploaded_file.getvalue()
-        mime_type = uploaded_file.type or "image/jpeg"
+        if analyze_clicked:
+            raw_bytes = uploaded_file.getvalue()
+            mime_type = uploaded_file.type or "image/jpeg"
 
-        with st.spinner("Analyzing diagnostic traits with Meta Muse Spark and querying GBIF Backbone Taxonomy..."):
-            try:
-                if use_fixture:
-                    result: VivedexResult = get_demo_fixture_result()
-                else:
-                    result = backend.process_observation(raw_bytes, mime_type)
+            with st.spinner("Analysing visible traits with Meta Muse Spark..."):
+                try:
+                    if use_fixture:
+                        result: VivedexResult = get_demo_fixture_result()
+                    else:
+                        result = backend.process_observation(raw_bytes, mime_type)
 
-                st.session_state["last_identification_result"] = result
-                st.session_state["last_is_fixture"] = use_fixture
-                st.session_state["obs_saved_flag"] = False
+                    st.session_state["last_identification_result"] = result
+                    st.session_state["last_is_fixture"] = use_fixture
+                    st.session_state["obs_saved_flag"] = False
 
-            except ImageValidationError as e:
-                st.error(f"❌ **Validation Error:** {str(e)}")
-                return
-            except MetaAPIConfigurationError as e:
-                st.error(f"⚙️ **Configuration Error:** {str(e)}")
-                return
-            except MetaAPIRequestError as e:
-                st.error(f"🌐 **Vision Model Error:** {str(e)}")
-                return
-            except GBIFRequestError as e:
-                st.error(f"🏛️ **GBIF Service Error:** {str(e)}")
-                return
-            except Exception as e:
-                st.error(f"⚠️ **Unexpected Error:** {str(e)}")
-                return
+                except ImageValidationError as e:
+                    st.error(f"❌ **Validation Error:** {str(e)}")
+                    return
+                except MetaAPIConfigurationError as e:
+                    st.error(f"⚙️ **Configuration Error:** {str(e)}")
+                    return
+                except MetaAPIRequestError as e:
+                    st.error(f"🌐 **Vision Model Error:** {str(e)}")
+                    return
+                except GBIFRequestError as e:
+                    st.error(f"🏛️ **GBIF Service Error:** {str(e)}")
+                    return
+                except Exception as e:
+                    st.error(f"⚠️ **Unexpected Error:** {str(e)}")
+                    return
 
-    # Results Rendering
+    # -------------------------------------------------------------------------
+    # RESULTS RENDERING (Steps 4, 5, 6 — Only rendered after analysis)
+    # -------------------------------------------------------------------------
     active_result: VivedexResult | None = st.session_state.get("last_identification_result")
     is_fixture = st.session_state.get("last_is_fixture", False)
 
@@ -132,7 +136,7 @@ def render_identify_page(
         esc_disclaimer = escape_text(active_result.disclaimer)
         st.markdown(
             f"""
-            <div style="background: #fff8e6; border: 1px solid #ffe299; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-weight: 600; color: #8a6500;">
+            <div style="background: #FFF8E6; border: 1px solid #FFE299; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; font-weight: 600; color: #8A6500;">
                 ⚠️ {esc_disclaimer}
             </div>
             """,
@@ -145,8 +149,10 @@ def render_identify_page(
         candidates = active_result.ai_candidate.candidates
         primary_candidate = candidates[0] if candidates else None
 
-        # Step 6: Candidate Identification
-        st.markdown("### Step 6: Proposed Taxon Candidate (AI Vision)")
+        # ---------------------------------------------------------------------
+        # STEP 4: CANDIDATE IDENTIFICATION
+        # ---------------------------------------------------------------------
+        st.markdown("### 4. Candidate Identification")
         if primary_candidate and primary_candidate.scientific_name:
             col_prop1, col_prop2 = st.columns([3, 1])
             with col_prop1:
@@ -155,7 +161,7 @@ def render_identify_page(
                 label_prefix = f"{comm_name} — " if comm_name else ""
                 st.markdown(
                     f"""
-                    <div style="font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #183B32;">
+                    <div style="font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem; font-weight: 700; color: #183B32;">
                         {label_prefix}<span class="latin-binomial">*{sci_name}*</span>
                     </div>
                     """,
@@ -168,8 +174,8 @@ def render_identify_page(
             if primary_candidate.uncertainty_note:
                 st.info(f"ℹ️ **Confidence & Diagnostic Uncertainty:** {primary_candidate.uncertainty_note}")
 
-            # Step 5: Visible Evidence Traits
-            st.markdown("#### Step 5: Morphological Evidence Traits")
+            # Morphological Evidence Traits
+            st.markdown("#### Diagnostic Visual Traits")
             if primary_candidate.visual_evidence:
                 for trait in primary_candidate.visual_evidence:
                     st.markdown(f"- {trait}")
@@ -183,20 +189,22 @@ def render_identify_page(
         else:
             st.error("No candidate organism could be proposed from this photograph.")
 
-        # Step 7: GBIF Backbone Taxonomic Reconciliation
+        # ---------------------------------------------------------------------
+        # STEP 5: RECONCILE TAXONOMY (GBIF)
+        # ---------------------------------------------------------------------
         st.markdown("---")
-        st.markdown("### Step 7: Authoritative GBIF Backbone Taxonomy Reconciliation")
+        st.markdown("### 5. Taxonomic Reconciliation (GBIF)")
         gbif_match = active_result.taxonomic_resolution
 
         if gbif_match and gbif_match.match_type != "NONE":
             # State warnings
             if gbif_match.match_type == "HIGHERRANK":
                 st.warning(
-                    f"⚠️ **HIGHER RANK MATCH:** Could not resolve to species. Reconciled to higher rank ({gbif_match.rank}): *{gbif_match.matched_scientific_name}*."
+                    f"⚠️ **HIGHER RANK MATCH:** Could not resolve to species level. Reconciled to higher rank ({gbif_match.rank}): *{gbif_match.matched_scientific_name}*."
                 )
             elif gbif_match.match_type == "FUZZY":
                 st.warning(
-                    f"⚠️ **FUZZY NAME MATCH:** Reconciled fuzzily with match score {gbif_match.gbif_match_score}/100. May not be exact species."
+                    f"⚠️ **FUZZY NAME MATCH:** Reconciled fuzzily with match score {gbif_match.gbif_match_score}/100. May not be the exact species."
                 )
 
             col_g1, col_g2 = st.columns(2)
@@ -220,9 +228,11 @@ def render_identify_page(
         else:
             st.warning("⚠️ No matching taxon could be found in the GBIF Backbone Taxonomy for the proposed name.")
 
-        # Steps 8 & 9: Save Observation & Add Field Notes
+        # ---------------------------------------------------------------------
+        # STEP 6: SAVE FIELD OBSERVATION
+        # ---------------------------------------------------------------------
         st.markdown("---")
-        st.markdown("### Steps 8 & 9: Save to My Dex & Add Field Notes")
+        st.markdown("### 6. Save Field Observation")
 
         if current_user is not None:
             if st.session_state.get("obs_saved_flag"):
@@ -246,7 +256,7 @@ def render_identify_page(
 
                 with st.form("save_obs_workflow_form"):
                     notes_input = st.text_area(
-                        "Step 9: Naturalist Field Notes (habitat, vegetation, behavior):",
+                        "Naturalist Field Notes (habitat, vegetation, behavior):",
                         placeholder="Recorded in damp deciduous woodland on oak trunk...",
                     )
                     location_input = st.text_input(
@@ -259,7 +269,7 @@ def render_identify_page(
                     with col_fs2:
                         sel_exp_name = st.selectbox("Link to Scientific Expedition:", list(exp_options.keys()))
 
-                    submit_obs = st.form_submit_button("📓 Record Field Observation to Journal", type="primary")
+                    submit_obs = st.form_submit_button("📓 Record Observation to Field Journal", type="primary")
 
                     if submit_obs:
                         cand_name = (
@@ -300,13 +310,13 @@ def render_identify_page(
         else:
             st.info("Log in or register via the sidebar to record this observation to your personal journal and earn naturalist XP.")
 
-        # Step 10: Export JSON Record
+        # Export Scientific Record
         st.markdown("---")
-        st.markdown("### Step 10: Export Scientific Observation")
+        st.markdown("#### Export Scientific Observation")
         json_payload = active_result.to_json(indent=2)
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         st.download_button(
-            label="💾 Download Complete JSON Observation Record",
+            label="💾 Download JSON Observation Record",
             data=json_payload,
             file_name=f"vivedex-observation-{stamp}.json",
             mime="application/json",
