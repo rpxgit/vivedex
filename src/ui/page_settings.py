@@ -319,3 +319,4 @@ def render_settings_page(
                attributed with CC BY 4.0 licensing and confidence scores.
             """
         )
+

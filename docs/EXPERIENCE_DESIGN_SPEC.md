@@ -176,14 +176,12 @@ $$\text{Discover} \longrightarrow \text{Identify} \longrightarrow \text{Verify} 
 - **`.provenance-tag`:** Monospace citation badge highlighting licensing (`CC BY 4.0`) and origin.
 - **`.privacy-badge`:** Subtle inline paper container with lock icon and metadata privacy notice.
 - **`.security-badge`:** Mandatory local prototype security disclaimer.
-
 ---
 
 ## 7. Responsive Behavior & Accessibility
 - **Fluid Layouts:** Uses Streamlit `layout="wide"` with responsive column distribution (`st.columns([1, 1])` or `st.columns([3, 1])`).
 - **Contrast Ratios:** Text color `--ink` (`#252C27`) against `--paper` (`#FCFAF4`) yields contrast ratio $> 13:1$ (exceeding WCAG AAA).
 - **Responsive Media:** Images use `width="stretch"` to adapt fluidly to laptop and desktop screens without horizontal overflow.
-
 
 ---
 
@@ -196,3 +194,5 @@ The **Account Settings** page (`/settings`) implements a dedicated Bring Your Ow
 3. **Session-Only Memory Disclosure:** Explicit banner clarifying that keys reside exclusively in volatile server-side session memory and are never persisted to SQLite, user accounts, or disk.
 4. **Live Verification:** Built-in "Test Connection" action sending a text-only ping (`Reply with exactly: VIVEDEX_API_CONNECTION_OK`) to verify endpoint responsiveness and display verified model (`muse-spark-1.3`).
 5. **Key Management Controls:** Disconnect (clears session memory) and Replace API Key.
+
+
